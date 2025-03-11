@@ -32,6 +32,12 @@ import {
   Activity
 } from 'lucide-react';
 
+// Helper function to ensure consistent number formatting
+const formatNumber = (value) => {
+  // Use a specific locale (e.g., 'en-US') for consistency between server and client
+  return value.toLocaleString('en-US');
+};
+
 const StatisticsPage = () => {
   const { 
     userStats, 
@@ -60,12 +66,6 @@ const StatisticsPage = () => {
     { name: 'Abonnements', value: revenueStats.revenueSources.subscriptions },
     { name: 'Services Premium', value: revenueStats.revenueSources.premiumServices }
   ];
-
-  // Données pour le graphique des canaux d'acquisition
-  // const acquisitionChannelData = marketingStats.acquisitionChannels.map(channel => ({
-  //   name: channel.name,
-  //   value: channel.users
-  // }));
 
   // Données pour le graphique des meilleures régions
   const topRegionsData = regionalStats.topRegions.map(region => ({
@@ -134,7 +134,7 @@ const StatisticsPage = () => {
             <DollarSign className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{revenueStats.totalRevenue.toLocaleString()}€</div>
+            <div className="text-2xl font-bold">{formatNumber(revenueStats.totalRevenue)}€</div>
             <p className="text-xs text-muted-foreground">
               +{revenueStats.revenueGrowth.toString()}% de croissance
             </p>
@@ -196,7 +196,7 @@ const StatisticsPage = () => {
                     <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                   ))}
                 </Pie>
-                <Tooltip formatter={(value) => `${value.toLocaleString()}€`} />
+                <Tooltip formatter={(value) => `${formatNumber(value)}€`} />
                 <Legend />
               </PieChart>
             </ResponsiveContainer>
@@ -222,7 +222,7 @@ const StatisticsPage = () => {
                 <XAxis dataKey="name" />
                 <YAxis yAxisId="left" orientation="left" stroke="#8884d8" />
                 <YAxis yAxisId="right" orientation="right" stroke="#82ca9d" />
-                <Tooltip />
+                <Tooltip formatter={(value) => formatNumber(value)} />
                 <Legend />
                 <Bar yAxisId="left" dataKey="commandes" fill="#8884d8" name="Commandes" />
                 <Bar yAxisId="right" dataKey="revenu" fill="#82ca9d" name="Revenu (€)" />
@@ -250,7 +250,7 @@ const StatisticsPage = () => {
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis type="number" />
                 <YAxis dataKey="name" type="category" />
-                <Tooltip formatter={(value) => `${value.toLocaleString()}€`} />
+                <Tooltip formatter={(value) => `${formatNumber(value)}€`} />
                 <Legend />
                 <Bar dataKey="ventes" fill="#8884d8" name="Ventes (€)" />
               </BarChart>

@@ -56,7 +56,9 @@ import {
   Clock,
   CheckCircle,
   AlertTriangle,
-  Plus
+  Plus,
+  Edit,
+  Trash
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -81,6 +83,8 @@ export default function DeliveryManagement() {
   const [showDelivererDetails, setShowDelivererDetails] = useState(false);
   const [activeTab, setActiveTab] = useState("deliverers");
   const [showAddDeliverer, setShowAddDeliverer] = useState(false);
+  const [showEditDeliverer, setShowEditDeliverer] = useState(false);
+  const [showDeleteDeliverer, setShowDeleteDeliverer] = useState(false);
   const [newDeliverer, setNewDeliverer] = useState({
     first_name: '',
     last_name: '',
@@ -135,6 +139,20 @@ export default function DeliveryManagement() {
       tel: '',
       address: ''
     });
+  };
+
+  // Handle editing deliverer
+  const handleEditDeliverer = () => {
+    // Here you would typically make an API call to update the deliverer
+    toast.success('Livreur modifié avec succès !');
+    setShowEditDeliverer(false);
+  };
+
+  // Handle deleting deliverer
+  const handleDeleteDeliverer = () => {
+    // Here you would typically make an API call to delete the deliverer
+    toast.success('Livreur supprimé avec succès !');
+    setShowDeleteDeliverer(false);
   };
 
   // Reset search when changing tabs
@@ -369,11 +387,21 @@ export default function DeliveryManagement() {
                                 </DropdownMenuItem>
                                 <DropdownMenuItem
                                   onClick={() => {
-                                    toast.success(`Un message a été envoyé à ${deliverer.first_name} ${deliverer.last_name}`);
+                                    setSelectedDeliverer(deliverer);
+                                    setShowEditDeliverer(true);
                                   }}
                                 >
-                                  <Mail className="mr-2 h-4 w-4" />
-                                  Envoyer un message
+                                  <Edit className="mr-2 h-4 w-4" />
+                                  Modifier
+                                </DropdownMenuItem>
+                                <DropdownMenuItem
+                                  onClick={() => {
+                                    setSelectedDeliverer(deliverer);
+                                    setShowDeleteDeliverer(true);
+                                  }}
+                                >
+                                  <Trash className="mr-2 h-4 w-4" />
+                                  Supprimer
                                 </DropdownMenuItem>
                               </DropdownMenuContent>
                             </DropdownMenu>
@@ -611,6 +639,99 @@ export default function DeliveryManagement() {
               setShowDelivererDetails(false);
             }}>
               Contacter
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Deliverer Dialog */}
+      <Dialog open={showEditDeliverer} onOpenChange={setShowEditDeliverer}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle>Modifier le livreur</DialogTitle>
+            <DialogDescription>
+              Modifiez les informations du livreur ci-dessous.
+            </DialogDescription>
+          </DialogHeader>
+          {selectedDeliverer && (
+            <div className="grid gap-4 py-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="flex flex-col gap-2">
+                  <Label htmlFor="first_name">Prénom</Label>
+                  <Input
+                    id="first_name"
+                    value={selectedDeliverer.first_name}
+                    onChange={(e) => setSelectedDeliverer({...selectedDeliverer, first_name: e.target.value})}
+                    placeholder="Jean"
+                  />
+                </div>
+                <div className="flex flex-col gap-2">
+                  <Label htmlFor="last_name">Nom</Label>
+                  <Input
+                    id="last_name"
+                    value={selectedDeliverer.last_name}
+                    onChange={(e) => setSelectedDeliverer({...selectedDeliverer, last_name: e.target.value})}
+                    placeholder="Dupont"
+                  />
+                </div>
+              </div>
+              <div className="flex flex-col gap-2">
+                <Label htmlFor="email">Email</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  value={selectedDeliverer.email}
+                  onChange={(e) => setSelectedDeliverer({...selectedDeliverer, email: e.target.value})}
+                  placeholder="jean.dupont@example.com"
+                />
+              </div>
+              <div className="flex flex-col gap-2">
+                <Label htmlFor="tel">Téléphone</Label>
+                <Input
+                  id="tel"
+                  type="tel"
+                  value={selectedDeliverer.tel}
+                  onChange={(e) => setSelectedDeliverer({...selectedDeliverer, tel: e.target.value})}
+                  placeholder="06 12 34 56 78"
+                />
+              </div>
+              <div className="flex flex-col gap-2">
+                <Label htmlFor="address">Adresse</Label>
+                <Input
+                  id="address"
+                  value={selectedDeliverer.address}
+                  onChange={(e) => setSelectedDeliverer({...selectedDeliverer, address: e.target.value})}
+                  placeholder="123 rue de la Livraison"
+                />
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowEditDeliverer(false)}>
+              Annuler
+            </Button>
+            <Button onClick={handleEditDeliverer}>
+              Enregistrer les modifications
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Deliverer Dialog */}
+      <Dialog open={showDeleteDeliverer} onOpenChange={setShowDeleteDeliverer}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Supprimer le livreur</DialogTitle>
+            <DialogDescription>
+              Êtes-vous sûr de vouloir supprimer ce livreur ? Cette action est irréversible.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowDeleteDeliverer(false)}>
+              Annuler
+            </Button>
+            <Button variant="destructive" onClick={handleDeleteDeliverer}>
+              Supprimer
             </Button>
           </DialogFooter>
         </DialogContent>

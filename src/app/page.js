@@ -3,6 +3,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import Image from 'next/image';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
@@ -19,15 +20,16 @@ export default function LoginPage() {
       document.cookie = 'authToken=12345; path=/';
 
       // Redirection vers la page d'accueil après une connexion réussie
-      router.push('/');
+      router.push('/dashboard');
     } else {
       setError('Email ou mot de passe incorrect');
     }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100">
-      <div className="bg-white p-8 rounded-lg shadow-md w-full max-w-md">
+    <div className="min-h-screen flex items-center justify-center bg-gray-100 relative">
+      {/* <Image src="/back.jpg" alt="Background" layout="fill" objectFit="cover" className="z-0" /> */}
+      <div className="bg-white p-8 rounded-lg shadow-md w-full max-w-md z-10">
         <h1 className="text-2xl font-bold text-center mb-6">Connexion</h1>
         <form onSubmit={handleSubmit}>
           <div className="mb-4">
