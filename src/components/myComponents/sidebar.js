@@ -15,7 +15,8 @@ import {
   HelpCircle,
   LogOut,
   Menu,
-  X
+  X,
+  Percent
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -56,6 +57,7 @@ const SIDEBAR = () => {
     { icon: BarChart, label: 'Statistiques', href: '/analytics' },
     { icon: CreditCard, label: 'Paiements', href: '/payments' },
     { icon: Bell, label: 'Notifications', href: '/notifications' },
+    { icon: Percent , label: 'Promotion', href: '/promotion' },
     { icon: Settings, label: 'Paramètres', href: '/settings' },
     { icon: HelpCircle, label: 'Support', href: '/support' },
   ];
@@ -122,10 +124,10 @@ const SIDEBAR = () => {
     );
   }
 
-  // Version desktop: sidebar classique
+  // Version desktop: sidebar fixe
   return (
     <div className={cn(
-      "h-screen flex flex-col bg-slate-900 text-white transition-all duration-300 relative z-50 top-0 left-0",
+      "h-screen flex flex-col bg-slate-900 text-white transition-all duration-300 fixed left-0 top-0 bottom-0",
       expanded ? "w-64" : "w-20"
     )}>
       {/* Logo et titre */}
@@ -144,7 +146,7 @@ const SIDEBAR = () => {
         </button>
       </div>
 
-      {/* Menu principal */}
+      {/* Menu principal avec scrolling */}
       <nav className="flex-1 pt-4 overflow-y-auto">
         <ul className="space-y-2 px-2">
           {menuItems.map((item, index) => (
