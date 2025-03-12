@@ -53,7 +53,7 @@ const SIDEBAR = () => {
     { icon: Users, label: 'Utilisateurs', href: '/users' },
     { icon: Truck, label: 'Livraisons', href: '/deliver' },
     { icon: ShoppingCart, label: 'Boutiques', href: '/shops' },
-    // { icon: Package, label: 'Produits', href: '/products' },
+    { icon: Package, label: 'Produits', href: '/products' },
     { icon: BarChart, label: 'Statistiques', href: '/analytics' },
     { icon: CreditCard, label: 'Paiements', href: '/payments' },
     { icon: Bell, label: 'Notifications', href: '/notifications' },
