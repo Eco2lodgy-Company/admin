@@ -132,7 +132,7 @@ const PaymentManagement = () => {
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-bold">Gestion des Paiements</h1>
         <Button variant="outline" className="flex items-center gap-2">
-          <FileDown size={16} /> Exporter
+          {/* <FileDown size={16} /> Exporter */}
         </Button>
       </div>
 
@@ -160,11 +160,11 @@ const PaymentManagement = () => {
         </Card>
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-gray-500">Taux de commission moyen</CardTitle>
+            <CardTitle className="text-sm font-medium text-gray-500">Abonnement</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {filteredPayments.length ? (totalCommission * 100 / filteredPayments.reduce((sum, payment) => sum + payment.amount, 0)).toFixed(1) : 0}%
+              25320 €
             </div>
           </CardContent>
         </Card>

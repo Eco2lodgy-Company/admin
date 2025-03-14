@@ -15,6 +15,8 @@ import {
   HelpCircle,
   LogOut,
   Menu,
+  LifeBuoy,
+  Tags,
   X,
   Percent
 } from 'lucide-react';
@@ -48,18 +50,25 @@ const SIDEBAR = () => {
     };
   }, []);
 
+  // Ajout des compteurs à chaque élément du menu
   const menuItems = [
-    { icon: LayoutDashboard, label: 'Dashboard', href: '/dashboard' },
-    { icon: Users, label: 'Utilisateurs', href: '/users' },
-    { icon: Truck, label: 'Livraisons', href: '/deliver' },
-    { icon: ShoppingCart, label: 'Boutiques', href: '/shops' },
-    { icon: Package, label: 'Produits', href: '/products' },
-    { icon: BarChart, label: 'Statistiques', href: '/analytics' },
-    { icon: CreditCard, label: 'Paiements', href: '/payments' },
-    { icon: Bell, label: 'Notifications', href: '/notifications' },
-    { icon: Percent , label: 'Promotion', href: '/promotion' },
-    { icon: Settings, label: 'Paramètres', href: '/settings' },
-    { icon: HelpCircle, label: 'Support', href: '/support' },
+    { icon: LayoutDashboard, label: 'Dashboard', href: '/dashboard'},
+    { icon: Users, label: 'Utilisateurs', href: '/users', count: 42 },
+    { icon: Truck, label: 'Livraisons', href: '/deliver', count: 12 },
+    { icon: Tags, label: 'Tarifs des Courses', href: '/tarif', count: 12 },
+    { icon: ShoppingCart, label: 'Boutiques', href: '/shops', count: 8 },
+    { icon: Package, label: 'Produits', href: '/products', count: 25 },
+    { icon: Package, label: 'Partenaires', href: '/partenaire', count: 25 },
+    { icon: Package, label: 'Commandes des Partenaires', href: '/commandes', count: 25 },
+    { icon: Package, label: 'Tarifs des Courses', href: '/tarif', count: 25 },
+    { icon: BarChart, label: 'Statistiques', href: '/analytics', count: 0 },
+    { icon: CreditCard, label: 'Paiements', href: '/payments', count: 7 },
+    { icon: Bell, label: 'Notifications', href: '/notifications', count: 33 },
+    { icon: Percent, label: 'Promotion', href: '/promotion', count: 4 },
+    { icon: Percent, label: 'Publicite', href: '/pub', count: 4 },
+    { icon: Settings, label: 'Paramètres', href: '/settings', count: 0 },
+    { icon: LifeBuoy, label: 'Support', href: '/support', count: 2 },
+    { icon: HelpCircle, label: 'FAQ', href: '/faq', count: 2 },
   ];
 
   // Version mobile: bouton hamburger et menu modal
@@ -104,6 +113,11 @@ const SIDEBAR = () => {
                       >
                         <item.icon size={20} className="text-slate-300" />
                         <span className="ml-3 text-slate-200">{item.label}</span>
+                        {item.count > 0 && (
+                          <span className="ml-auto bg-blue-600 text-white text-xs font-medium px-2 py-1 rounded-full">
+                            {item.count}
+                          </span>
+                        )}
                       </a>
                     </li>
                   ))}
@@ -157,7 +171,19 @@ const SIDEBAR = () => {
               >
                 <item.icon size={20} className="text-slate-300" />
                 {expanded && (
-                  <span className="ml-3 text-slate-200">{item.label}</span>
+                  <div className="flex justify-between items-center w-full ml-3">
+                    <span className="text-slate-200">{item.label}</span>
+                    {item.count > 0 && (
+                      <span className="bg-blue-600 text-white text-xs font-medium px-2 py-1 rounded-full">
+                        {item.count}
+                      </span>
+                    )}
+                  </div>
+                )}
+                {!expanded && item.count > 0 && (
+                  <span className="absolute top-0 right-0 -mt-1 -mr-1 bg-blue-600 text-white text-xs font-medium px-1.5 py-0.5 rounded-full">
+                    {item.count}
+                  </span>
                 )}
               </a>
             </li>

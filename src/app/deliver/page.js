@@ -157,8 +157,20 @@ export default function DeliveryManagement() {
 
   // Reset search when changing tabs
   useEffect(() => {
+    const fechtDeliverer = async() => {
+      const res = await fetch('http://localhost:8000/deliverer')
+
+      if (!res.ok) {
+        throw new Error(`HTTP error! Status: ${response.status}`);
+      }
+      const data = await res.json();
+      setFilteredDeliverers(data)
+    // setFilteredOrders(data);
+
+    }
     setSearchQuery('');
-    setFilteredDeliverers(deliverers);
+    // setFilteredDeliverers(deliverers);
+    fechtDeliverer()
     setFilteredOrders(deliveryData);
   }, [activeTab]);
 
@@ -540,8 +552,8 @@ export default function DeliveryManagement() {
               </div>
             </CardContent>
             <CardFooter className="flex justify-between border-t pt-6">
-              <Button variant="outline">Exporter les commandes</Button>
-              <Button>Assigner les commandes en attente</Button>
+              {/* <Button variant="outline">Exporter les commandes</Button> */}
+              {/* <Button>Assigner les commandes en attente</Button> */}
             </CardFooter>
           </Card>
         </TabsContent>

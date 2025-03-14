@@ -64,7 +64,6 @@ const StatisticsPage = () => {
   const revenueSourceData = [
     { name: 'Commissions', value: revenueStats.revenueSources.commissions },
     { name: 'Abonnements', value: revenueStats.revenueSources.subscriptions },
-    { name: 'Services Premium', value: revenueStats.revenueSources.premiumServices }
   ];
 
   // Données pour le graphique des meilleures régions
@@ -208,9 +207,9 @@ const StatisticsPage = () => {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Map className="h-5 w-5" />
-              <span>Top Régions</span>
+              <span>Top 5 des Boutiques</span>
             </CardTitle>
-            <CardDescription>Performance par région</CardDescription>
+            <CardDescription>Performance par Boutiques</CardDescription>
           </CardHeader>
           <CardContent className="h-80">
             <ResponsiveContainer width="100%" height="100%">
@@ -329,7 +328,7 @@ const StatisticsPage = () => {
         </Card>
 
         {/* Carte Marketing */}
-        <Card>
+        {/* <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <TrendingUp className="h-5 w-5" />
@@ -363,7 +362,7 @@ const StatisticsPage = () => {
               </div>
             </div>
           </CardContent>
-        </Card>
+        </Card> */}
       </div>
     </div>
   );

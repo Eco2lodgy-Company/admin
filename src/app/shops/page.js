@@ -8,6 +8,14 @@ import {
   CardTitle 
 } from '@/components/ui/card';
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
+
+import {
   Table,
   TableBody,
   TableCell,
@@ -177,16 +185,19 @@ const ShopManagement = () => {
           placeholder="123 Rue de la Paix, Paris"
         />
       </div>
-      <div className="flex flex-col gap-2">
-        <Label htmlFor={`${isEdit ? 'edit-' : ''}phone`}>Téléphone</Label>
-        <Input
-          id={`${isEdit ? 'edit-' : ''}phone`}
-          value={data.phone}
-          onChange={(e) => onChange({...data, phone: e.target.value})}
-          placeholder="+33 1 23 45 67 89"
-        />
+      <Label htmlFor="category">Type d'abonnement</Label>
+          <Select>
+                <SelectTrigger className="w-[180px]">
+                    <SelectValue placeholder="`{formData.shop}`" />
+                      </SelectTrigger>
+                     <SelectContent>
+                       <SelectItem value="light">Mensuel</SelectItem>
+                        <SelectItem value="dark">10%</SelectItem>
+                        <SelectItem value="system">15%</SelectItem>
+               </SelectContent>
+            </Select>
       </div>
-    </div>
+    
   );
 
   return (
@@ -249,6 +260,7 @@ const ShopManagement = () => {
                 <TableHead>Description</TableHead>
                 <TableHead>Adresse</TableHead>
                 <TableHead>Téléphone</TableHead>
+                <TableHead>Abonnement</TableHead>
                 <TableHead>Date de création</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
@@ -263,6 +275,7 @@ const ShopManagement = () => {
                     <TableCell className="max-w-[200px] truncate">{shop.description}</TableCell>
                     <TableCell className="max-w-[200px] truncate">{shop.address}</TableCell>
                     <TableCell>{shop.phone}</TableCell>
+                    <TableCell>Mensuel</TableCell>
                     <TableCell>{shop.createdAt}</TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-2">

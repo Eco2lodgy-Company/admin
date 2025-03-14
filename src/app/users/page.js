@@ -1,5 +1,5 @@
 "use client"
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { mockUsers } from '@/data/mockData';
 import { 
   Card, 
@@ -58,6 +58,7 @@ import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 
 export default function UserManagement() {
+  
   const [users, setUsers] = useState(mockUsers);
   const [filteredUsers, setFilteredUsers] = useState(mockUsers);
   const [searchQuery, setSearchQuery] = useState('');
@@ -76,6 +77,29 @@ export default function UserManagement() {
     address: ''
   });
 
+  useEffect(() => {
+    const fetchUsers = async () => {
+      try {
+        const response = await fetch('http://192.168.1.156:8000/');
+        
+        if (!response.ok) {
+          throw new Error(`HTTP error! Status: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        setUsers(data);
+        setFilteredUsers(data);
+        console.log('Users fetched successfully:', data);
+      } catch (err) {
+        console.error('Error fetching users:', err.message);
+        // Optionally fall back to mock data if API fails
+        // setUsers(mockUsers);
+        // setFilteredUsers(mockUsers);
+      }
+    };
+    
+    fetchUsers();
+  }, []);
   // Handle search and filter
   const handleSearch = (e) => {
     const query = e.target.value.toLowerCase();
@@ -89,7 +113,7 @@ export default function UserManagement() {
   };
 
   const filterUsers = (query, role) => {
-    let filtered = mockUsers;
+    let filtered = users;
     
     if (query) {
       filtered = filtered.filter(user => 
