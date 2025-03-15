@@ -1,5 +1,6 @@
 "use client";
 import React, { useState, useEffect } from 'react';
+
 import {
   ChevronLeft,
   ChevronRight,
@@ -18,7 +19,24 @@ import {
   LifeBuoy,
   Tags,
   X,
-  Percent
+  Percent,
+  Home,
+  ShoppingBag,
+  BarChart2,
+  Star,
+  Shield,
+  Database,
+  TrendingUp,
+  MessageSquare,
+  UserCheck,
+  Store,
+  DollarSign,
+  Heart,
+  Activity,
+  AlertTriangle,
+  ChevronDown,
+  Building,
+  Image
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -58,14 +76,14 @@ const SIDEBAR = () => {
     { icon: Tags, label: 'Tarifs des Courses', href: '/tarif', count: 12 },
     { icon: ShoppingCart, label: 'Boutiques', href: '/shops', count: 8 },
     { icon: Package, label: 'Produits', href: '/products', count: 25 },
-    { icon: Package, label: 'Partenaires', href: '/partenaire', count: 25 },
-    { icon: Package, label: 'Commandes des Partenaires', href: '/commandes', count: 25 },
-    { icon: Package, label: 'Tarifs des Courses', href: '/tarif', count: 25 },
+    { icon: Building, label: 'Partenaires', href: '/partenaire', count: 25 },
+    { icon: ShoppingBag, label: 'Commandes des Partenaires', href: '/commandes', count: 25 },
+    { icon: Tags, label: 'Tarifs des Courses', href: '/tarif', count: 25 },
     { icon: BarChart, label: 'Statistiques', href: '/analytics', count: 0 },
     { icon: CreditCard, label: 'Paiements', href: '/payments', count: 7 },
     { icon: Bell, label: 'Notifications', href: '/notifications', count: 33 },
     { icon: Percent, label: 'Promotion', href: '/promotion', count: 4 },
-    { icon: Percent, label: 'Publicite', href: '/pub', count: 4 },
+    { icon: Image, label: 'Publicite', href: '/pub', count: 4 },
     { icon: Settings, label: 'Paramètres', href: '/settings', count: 0 },
     { icon: LifeBuoy, label: 'Support', href: '/support', count: 2 },
     { icon: HelpCircle, label: 'FAQ', href: '/faq', count: 2 },
