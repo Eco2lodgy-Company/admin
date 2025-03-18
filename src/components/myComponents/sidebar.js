@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 
 import {
   ChevronLeft,
@@ -44,8 +44,15 @@ const SIDEBAR = () => {
   const [expanded, setExpanded] = useState(true);
   const [isMobile, setIsMobile] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [activePath, setActivePath] = useState('');
+  const activeItemRef = useRef(null);
+  const navRef = useRef(null);
 
   useEffect(() => {
+    // Récupérer le chemin actuel
+    const path = window.location.pathname;
+    setActivePath(path);
+
     // Vérifier si l'écran est mobile au chargement
     const checkIfMobile = () => {
       setIsMobile(window.innerWidth < 768); // 768px est généralement considéré comme le breakpoint pour les mobiles
@@ -68,6 +75,22 @@ const SIDEBAR = () => {
     };
   }, []);
 
+  // Effet pour scroller vers l'élément actif après le rendu
+  useEffect(() => {
+    if (activeItemRef.current && navRef.current) {
+      // Délai pour s'assurer que le DOM est complètement rendu
+      setTimeout(() => {
+        // Calculer la position pour centrer l'élément actif dans la vue
+        const containerHeight = navRef.current.clientHeight;
+        const itemPosition = activeItemRef.current.offsetTop;
+        const itemHeight = activeItemRef.current.clientHeight;
+        
+        // Centrer l'élément dans la vue
+        navRef.current.scrollTop = itemPosition - (containerHeight / 2) + (itemHeight / 2);
+      }, 100);
+    }
+  }, [activePath, expanded, mobileMenuOpen]);
+
   // Ajout des compteurs à chaque élément du menu
   const menuItems = [
     { icon: LayoutDashboard, label: 'Dashboard', href: '/dashboard'},
@@ -78,7 +101,6 @@ const SIDEBAR = () => {
     { icon: Package, label: 'Produits', href: '/products', count: 25 },
     { icon: Building, label: 'Partenaires', href: '/partenaire', count: 25 },
     { icon: ShoppingBag, label: 'Commandes des Partenaires', href: '/commandes', count: 25 },
-    { icon: Tags, label: 'Tarifs des Courses', href: '/tarif', count: 25 },
     { icon: BarChart, label: 'Statistiques', href: '/analytics', count: 0 },
     { icon: CreditCard, label: 'Paiements', href: '/payments', count: 7 },
     { icon: Bell, label: 'Notifications', href: '/notifications', count: 33 },
@@ -88,6 +110,11 @@ const SIDEBAR = () => {
     { icon: LifeBuoy, label: 'Support', href: '/support', count: 2 },
     { icon: HelpCircle, label: 'FAQ', href: '/faq', count: 2 },
   ];
+
+  // Vérifier si un élément du menu est actif
+  const isActive = (href) => {
+    return activePath === href;
+  };
 
   // Version mobile: bouton hamburger et menu modal
   if (isMobile) {
@@ -120,25 +147,41 @@ const SIDEBAR = () => {
               </div>
 
               {/* Menu principal */}
-              <nav className="flex-1 pt-4">
+              <nav className="flex-1 pt-4" ref={navRef}>
                 <ul className="space-y-2 px-2">
-                  {menuItems.map((item, index) => (
-                    <li key={index}>
-                      <a
-                        href={item.href}
-                        className="flex items-center p-3 rounded-md hover:bg-slate-800 transition-colors"
-                        onClick={() => setMobileMenuOpen(false)}
+                  {menuItems.map((item, index) => {
+                    const active = isActive(item.href);
+                    return (
+                      <li 
+                        key={index} 
+                        ref={active ? activeItemRef : null}
                       >
-                        <item.icon size={20} className="text-slate-300" />
-                        <span className="ml-3 text-slate-200">{item.label}</span>
-                        {item.count > 0 && (
-                          <span className="ml-auto bg-blue-600 text-white text-xs font-medium px-2 py-1 rounded-full">
-                            {item.count}
-                          </span>
-                        )}
-                      </a>
-                    </li>
-                  ))}
+                        <a
+                          href={item.href}
+                          className={cn(
+                            "flex items-center p-3 rounded-md transition-colors",
+                            active 
+                              ? "bg-blue-600 text-white" 
+                              : "hover:bg-slate-800 text-slate-200"
+                          )}
+                          onClick={() => setMobileMenuOpen(false)}
+                        >
+                          <item.icon size={20} className={active ? "text-white" : "text-slate-300"} />
+                          <span className="ml-3">{item.label}</span>
+                          {item.count > 0 && (
+                            <span className={cn(
+                              "ml-auto text-xs font-medium px-2 py-1 rounded-full",
+                              active 
+                                ? "bg-white text-blue-600" 
+                                : "bg-blue-600 text-white"
+                            )}>
+                              {item.count}
+                            </span>
+                          )}
+                        </a>
+                      </li>
+                    );
+                  })}
                 </ul>
               </nav>
 
@@ -179,33 +222,50 @@ const SIDEBAR = () => {
       </div>
 
       {/* Menu principal avec scrolling */}
-      <nav className="flex-1 pt-4 overflow-y-auto">
+      <nav className="flex-1 pt-4 overflow-y-auto" ref={navRef}>
         <ul className="space-y-2 px-2">
-          {menuItems.map((item, index) => (
-            <li key={index}>
-              <a
-                href={item.href}
-                className="flex items-center p-3 rounded-md hover:bg-slate-800 transition-colors"
+          {menuItems.map((item, index) => {
+            const active = isActive(item.href);
+            return (
+              <li 
+                key={index} 
+                ref={active ? activeItemRef : null}
+                className="relative"
               >
-                <item.icon size={20} className="text-slate-300" />
-                {expanded && (
-                  <div className="flex justify-between items-center w-full ml-3">
-                    <span className="text-slate-200">{item.label}</span>
-                    {item.count > 0 && (
-                      <span className="bg-blue-600 text-white text-xs font-medium px-2 py-1 rounded-full">
-                        {item.count}
-                      </span>
-                    )}
-                  </div>
-                )}
-                {!expanded && item.count > 0 && (
-                  <span className="absolute top-0 right-0 -mt-1 -mr-1 bg-blue-600 text-white text-xs font-medium px-1.5 py-0.5 rounded-full">
-                    {item.count}
-                  </span>
-                )}
-              </a>
-            </li>
-          ))}
+                <a
+                  href={item.href}
+                  className={cn(
+                    "flex items-center p-3 rounded-md transition-colors",
+                    active 
+                      ? "bg-blue-600 text-white" 
+                      : "hover:bg-slate-800"
+                  )}
+                >
+                  <item.icon size={20} className={active ? "text-white" : "text-slate-300"} />
+                  {expanded && (
+                    <div className="flex justify-between items-center w-full ml-3">
+                      <span className={active ? "text-white" : "text-slate-200"}>{item.label}</span>
+                      {item.count > 0 && (
+                        <span className={cn(
+                          "text-xs font-medium px-2 py-1 rounded-full",
+                          active 
+                            ? "bg-white text-blue-600" 
+                            : "bg-blue-600 text-white"
+                        )}>
+                          {item.count}
+                        </span>
+                      )}
+                    </div>
+                  )}
+                  {!expanded && item.count > 0 && (
+                    <span className="absolute top-0 right-0 -mt-1 -mr-1 bg-blue-600 text-white text-xs font-medium px-1.5 py-0.5 rounded-full">
+                      {item.count}
+                    </span>
+                  )}
+                </a>
+              </li>
+            );
+          })}
         </ul>
       </nav>
 
