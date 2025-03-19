@@ -58,9 +58,9 @@ import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 
 export default function UserManagement() {
-  
-  const [users, setUsers] = useState(mockUsers);
-  const [filteredUsers, setFilteredUsers] = useState(mockUsers);
+  const username = localStorage.getItem("username");
+  const [users, setUsers] = useState([]);
+  const [filteredUsers, setFilteredUsers] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [roleFilter, setRoleFilter] = useState('all');
   const [isAddUserOpen, setIsAddUserOpen] = useState(false);
@@ -68,30 +68,41 @@ export default function UserManagement() {
   const [isDeleteUserOpen, setIsDeleteUserOpen] = useState(false);
   const [currentUser, setCurrentUser] = useState(null);
   const [newUser, setNewUser] = useState({
-    role: 'client',
     email: '',
-    password: '',
-    first_name: '',
-    last_name: '',
-    tel: '',
-    address: ''
+    nom: '',
+    prenom: '',
+    telephone: '',
+    addresse: '',
+    role: 'Client',
+    password: "ShopByNoor",
+  confirmPassword: "ShopByNoor"
   });
 
   useEffect(() => {
     const fetchUsers = async () => {
+      const jwtSecret = process.env.JWT_SECRET;
       try {
-        const response = await fetch('http://192.168.1.156:8000/');
+        const response = await fetch(`http://195.35.24.128:8081/api/user/liste?username=${username}`,{
+          method: "GET",
+          
+          headers: {
+             "Content-Type": "application/json" ,
+             Authorization: `Bearer ${process.env.NEXT_PUBLIC_JWT_SECRET}`
+            },
+        });
         
         if (!response.ok) {
           throw new Error(`HTTP error! Status: ${response.status}`);
         }
         
         const data = await response.json();
-        setUsers(data);
-        setFilteredUsers(data);
+        setUsers(data.data);
+        setFilteredUsers(data.data);
         console.log('Users fetched successfully:', data);
+        toast.success("Données chargées avec succèes")
       } catch (err) {
         console.error('Error fetching users:', err.message);
+        toast.error("Erreur lors de la recuperation des donnees")
         // Optionally fall back to mock data if API fails
         // setUsers(mockUsers);
         // setFilteredUsers(mockUsers);
@@ -118,8 +129,8 @@ export default function UserManagement() {
     if (query) {
       filtered = filtered.filter(user => 
         user.email.toLowerCase().includes(query) || 
-        user.first_name.toLowerCase().includes(query) || 
-        user.last_name.toLowerCase().includes(query)
+        user.nom.toLowerCase().includes(query) || 
+        user.prenom.toLowerCase().includes(query)
       );
     }
     
@@ -131,30 +142,48 @@ export default function UserManagement() {
   };
 
   // Add new user
-  const handleAddUser = () => {
-    const uuid = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
-      const r = Math.random() * 16 | 0, v = c === 'x' ? r : (r & 0x3 | 0x8);
-      return v.toString(16);
-    });
-    
-    const user = {
-      id: uuid,
-      ...newUser,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-    };
+  const handleAddUser = async() => {
+  
+    try {
+      const response = await fetch(`http://195.35.24.128:8081/api/user/new`,{
+        method: "POST",
+        
+        headers: {
+           "Content-Type": "application/json" ,
+           Authorization: `Bearer ${process.env.NEXT_PUBLIC_JWT_SECRET}`
+          },
+          body:JSON.stringify(newUser)
+      });
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! Status: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      setUsers(data.data);
+      setFilteredUsers(data.data);
+      console.log('Users fetched successfully:', data);
+      toast.success("Données chargées avec succèes")
+    } catch (err) {
+      console.error('Error fetching users:', err.message);
+      toast.error("Erreur lors de la recuperation des donnees")
+      // Optionally fall back to mock data if API fails
+      // setUsers(mockUsers);
+      // setFilteredUsers(mockUsers);
+    }
     
     setUsers([...users, user]);
     setFilteredUsers([...filteredUsers, user]);
     setIsAddUserOpen(false);
     setNewUser({
-      role: 'client',
       email: '',
-      password: '',
-      first_name: '',
-      last_name: '',
-      tel: '',
-      address: ''
+      nom: '',
+      prenom: '',
+      telephone: '',
+      addresse: '',
+      role: 'Client',
+      password: "ShopByNoor",
+    confirmPassword: "ShopByNoor"
     });
     
     toast.success('Utilisateur ajouté avec succès');
@@ -211,13 +240,13 @@ export default function UserManagement() {
   // Get role badge style
   const getRoleBadge = (role) => {
     switch (role) {
-      case 'admin':
+      case 'Administrateur':
         return 'bg-purple-100 text-purple-800';
-      case 'seller':
+      case 'Vendeur':
         return 'bg-blue-100 text-blue-800';
-      case 'deliverer':
+      case 'Livreur':
         return 'bg-green-100 text-green-800';
-      case 'client':
+      case 'Client':
         return 'bg-gray-100 text-gray-800';
       default:
         return 'bg-gray-100 text-gray-800';
@@ -227,11 +256,11 @@ export default function UserManagement() {
   // Get translated role name
   const getRoleName = (role) => {
     switch (role) {
-      case 'admin':
+      case 'Administrateur':
         return 'Administrateur';
       case 'seller':
         return 'Vendeur';
-      case 'deliverer':
+      case 'Livreur':
         return 'Livreur';
       case 'client':
         return 'Client';
@@ -244,7 +273,7 @@ export default function UserManagement() {
     <div className="space-y-6">
       <div className="flex flex-col">
         <h1 className="text-2xl font-bold">Gestion des utilisateurs</h1>
-        <p className="text-gray-500 mt-1">Ajouter, modifier ou supprimer des utilisateurs</p>
+        {/* <p className="text-gray-500 mt-1">Ajouter, modifier ou supprimer des utilisateurs</p> */}
       </div>
 
       <Card>
@@ -253,7 +282,7 @@ export default function UserManagement() {
             <div>
               <CardTitle className="text-lg">Liste des utilisateurs</CardTitle>
               <CardDescription>
-                {filteredUsers.length} utilisateur{filteredUsers.length !== 1 ? 's' : ''}
+                {filteredUsers?.length || 0} utilisateur{filteredUsers?.length !== 1 ? 's' : ''}
               </CardDescription>
             </div>
             <div className="flex flex-col sm:flex-row gap-2">
@@ -273,10 +302,10 @@ export default function UserManagement() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">Tous les rôles</SelectItem>
-                  <SelectItem value="admin">Administrateurs</SelectItem>
-                  <SelectItem value="seller">Vendeurs</SelectItem>
-                  <SelectItem value="deliverer">Livreurs</SelectItem>
-                  <SelectItem value="client">Clients</SelectItem>
+                  <SelectItem value="Administrateur">Administrateurs</SelectItem>
+                  <SelectItem value="Vendeur">Vendeurs</SelectItem>
+                  <SelectItem value="Livreur">Livreurs</SelectItem>
+                  <SelectItem value="Client">Clients</SelectItem>
                 </SelectContent>
               </Select>
               <Dialog open={isAddUserOpen} onOpenChange={setIsAddUserOpen}>
@@ -306,10 +335,10 @@ export default function UserManagement() {
                           <SelectValue placeholder="Sélectionner un rôle" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="admin">Administrateur</SelectItem>
-                          <SelectItem value="seller">Vendeur</SelectItem>
-                          <SelectItem value="deliverer">Livreur</SelectItem>
-                          <SelectItem value="client">Client</SelectItem>
+                          <SelectItem value="Administrateur">Administrateur</SelectItem>
+                          <SelectItem value="Vendeur">Vendeur</SelectItem>
+                          <SelectItem value="Livreur">Livreur</SelectItem>
+                          <SelectItem value="Client">Client</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
@@ -320,8 +349,8 @@ export default function UserManagement() {
                       <Input
                         id="first_name"
                         className="col-span-3"
-                        value={newUser.first_name}
-                        onChange={(e) => setNewUser({...newUser, first_name: e.target.value})}
+                        value={newUser.prenom}
+                        onChange={(e) => setNewUser({...newUser, prenom: e.target.value})}
                       />
                     </div>
                     <div className="grid grid-cols-4 items-center gap-4">
@@ -331,8 +360,8 @@ export default function UserManagement() {
                       <Input
                         id="last_name"
                         className="col-span-3"
-                        value={newUser.last_name}
-                        onChange={(e) => setNewUser({...newUser, last_name: e.target.value})}
+                        value={newUser.nom}
+                        onChange={(e) => setNewUser({...newUser, nom: e.target.value})}
                       />
                     </div>
                     <div className="grid grid-cols-4 items-center gap-4">
@@ -360,14 +389,26 @@ export default function UserManagement() {
                       />
                     </div>
                     <div className="grid grid-cols-4 items-center gap-4">
+                      <Label htmlFor="password" className="text-right">
+                       Confirmer Mot de passe
+                      </Label>
+                      <Input
+                        id="password"
+                        type="password"
+                        className="col-span-3"
+                        value={newUser.confirmPassword}
+                        onChange={(e) => setNewUser({...newUser, confirmPassword: e.target.value})}
+                      />
+                    </div>
+                    <div className="grid grid-cols-4 items-center gap-4">
                       <Label htmlFor="tel" className="text-right">
                         Téléphone
                       </Label>
                       <Input
                         id="tel"
                         className="col-span-3"
-                        value={newUser.tel}
-                        onChange={(e) => setNewUser({...newUser, tel: e.target.value})}
+                        value={newUser.telephone}
+                        onChange={(e) => setNewUser({...newUser, telephone: e.target.value})}
                       />
                     </div>
                     <div className="grid grid-cols-4 items-center gap-4">
@@ -377,8 +418,8 @@ export default function UserManagement() {
                       <Input
                         id="address"
                         className="col-span-3"
-                        value={newUser.address}
-                        onChange={(e) => setNewUser({...newUser, address: e.target.value})}
+                        value={newUser.addresse}
+                        onChange={(e) => setNewUser({...newUser, addresse: e.target.value})}
                       />
                     </div>
                   </div>
@@ -407,11 +448,11 @@ export default function UserManagement() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredUsers.length > 0 ? (
+                {filterUsers && filteredUsers.length > 0 ? (
                   filteredUsers.map((user) => (
                     <TableRow key={user.id}>
                       <TableCell className="font-medium">
-                        {user.first_name} {user.last_name}
+                        {user.nom} {user.prenom}
                       </TableCell>
                       <TableCell>
                         <span className={cn(
@@ -422,8 +463,8 @@ export default function UserManagement() {
                         </span>
                       </TableCell>
                       <TableCell>{user.email}</TableCell>
-                      <TableCell>{user.tel || "-"}</TableCell>
-                      <TableCell>{formatDate(user.created_at)}</TableCell>
+                      <TableCell>{user.telephone || "-"}</TableCell>
+                      <TableCell>{formatDate(user.createdAt)}</TableCell>
                       <TableCell className="text-right">
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
@@ -495,10 +536,10 @@ export default function UserManagement() {
                     <SelectValue placeholder="Sélectionner un rôle" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="admin">Administrateur</SelectItem>
-                    <SelectItem value="seller">Vendeur</SelectItem>
-                    <SelectItem value="deliverer">Livreur</SelectItem>
-                    <SelectItem value="client">Client</SelectItem>
+                    <SelectItem value="Administrateur">Administrateur</SelectItem>
+                    <SelectItem value="Vendeur">Vendeur</SelectItem>
+                    <SelectItem value="Livreur">Livreur</SelectItem>
+                    <SelectItem value="Client">Client</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -509,8 +550,8 @@ export default function UserManagement() {
                 <Input
                   id="edit-first-name"
                   className="col-span-3"
-                  value={currentUser.first_name || ''}
-                  onChange={(e) => setCurrentUser({...currentUser, first_name: e.target.value})}
+                  value={currentUser.prenom || ''}
+                  onChange={(e) => setCurrentUser({...currentUser, prenom: e.target.value})}
                 />
               </div>
               <div className="grid grid-cols-4 items-center gap-4">
@@ -520,8 +561,8 @@ export default function UserManagement() {
                 <Input
                   id="edit-last-name"
                   className="col-span-3"
-                  value={currentUser.last_name || ''}
-                  onChange={(e) => setCurrentUser({...currentUser, last_name: e.target.value})}
+                  value={currentUser.nom || ''}
+                  onChange={(e) => setCurrentUser({...currentUser, nom: e.target.value})}
                 />
               </div>
               <div className="grid grid-cols-4 items-center gap-4">
@@ -543,8 +584,8 @@ export default function UserManagement() {
                 <Input
                   id="edit-tel"
                   className="col-span-3"
-                  value={currentUser.tel || ''}
-                  onChange={(e) => setCurrentUser({...currentUser, tel: e.target.value})}
+                  value={currentUser.telephone || ''}
+                  onChange={(e) => setCurrentUser({...currentUser, telephone: e.target.value})}
                 />
               </div>
               <div className="grid grid-cols-4 items-center gap-4">
@@ -555,7 +596,7 @@ export default function UserManagement() {
                   id="edit-address"
                   className="col-span-3"
                   value={currentUser.address || ''}
-                  onChange={(e) => setCurrentUser({...currentUser, address: e.target.value})}
+                  onChange={(e) => setCurrentUser({...currentUser, addresse: e.target.value})}
                 />
               </div>
             </div>

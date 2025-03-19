@@ -78,16 +78,18 @@ export default function LOGIN() {
     setError("");
 
     try {
-      const response = await fetch("/api/users/userMail", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          mail: formData.email,
-          password: formData.password,
-        }),
+      const response = await fetch(`http://195.35.24.128:8081/api/authenticate?username=${formData.email}&password=${formData.password}`, {
+        method: "POST"
+        // headers: { "Content-Type": "application/json" },
+        // body: JSON.stringify({
+        //   email: formData.email,
+        //   password: formData.password,
+        // }),
       });
+      console.log(formData.email,formData.password)
 
       const result = await response.json();
+      console.log(response)
 
       if (!response.ok) {
         throw new Error(result.message || "Échec de la connexion");
@@ -95,41 +97,23 @@ export default function LOGIN() {
 
       console.log("Connexion réussie :", result);
 
-      if (!result.user) {
+      if (!result.data) {
         throw new Error("Données utilisateur invalides");
       }
 
-      const { role, id_user } = result.user;
-      localStorage.setItem("userId", id_user);
-
-      // Ajout des logs
-      const logResponse = await fetch("/api/logs", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ id_user: id_user }),
-      });
-
-      if (!logResponse.ok) {
-        const errorData = await logResponse.json();
-        throw new Error(errorData.message || "Erreur lors de l'ajout aux logs");
-      }
-
+      const { role, email } = result.data.userInfo;
+      localStorage.setItem("username", email);
       // Afficher le message de succès avant la redirection
       setSuccess(true);
       
       // Redirection après un court délai
       setTimeout(() => {
         switch (role) {
-          case "admin":
-            router.push("/admin");
-            break;
-          case "resp":
-            router.push("/TeamHead");
+          case "Administrateur":
+            router.push("/dashboard");
             break;
           default:
-            router.push("/employees");
+            router.push("/");
             break;
         }
       }, 1500);
