@@ -1,4 +1,5 @@
 "use client"
+import { Toaster } from "@/components/ui/sonner"
 import React, { useEffect, useState } from 'react';
 import { mockUsers } from '@/data/mockData';
 import { 
@@ -49,6 +50,7 @@ import {
   MoreVertical, 
   Edit, 
   Trash2, 
+  UserCheck, UserX ,
   UserCircle,
   Mail,
   Phone,
@@ -58,7 +60,6 @@ import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 
 export default function UserManagement() {
-  const username = localStorage.getItem("username");
   const [users, setUsers] = useState([]);
   const [filteredUsers, setFilteredUsers] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
@@ -66,6 +67,7 @@ export default function UserManagement() {
   const [isAddUserOpen, setIsAddUserOpen] = useState(false);
   const [isEditUserOpen, setIsEditUserOpen] = useState(false);
   const [isDeleteUserOpen, setIsDeleteUserOpen] = useState(false);
+  const [isEnableUserOpen, setIsEnableUserOpen] = useState(false);
   const [currentUser, setCurrentUser] = useState(null);
   const [newUser, setNewUser] = useState({
     email: '',
@@ -78,19 +80,24 @@ export default function UserManagement() {
   confirmPassword: "ShopByNoor"
   });
 
+  
+
   useEffect(() => {
+    const username = localStorage.getItem("username");
+    const token = localStorage.getItem("token");  
+
     const fetchUsers = async () => {
-      const jwtSecret = process.env.JWT_SECRET;
+      const jwtSecret = process.env.NEXT_PUBLIC_JWT_SECRET;
       try {
         const response = await fetch(`http://195.35.24.128:8081/api/user/liste?username=${username}`,{
           method: "GET",
           
           headers: {
              "Content-Type": "application/json" ,
-             Authorization: `Bearer ${process.env.NEXT_PUBLIC_JWT_SECRET}`
+             Authorization: `Bearer ${token}`
             },
         });
-        
+        console.log(token)
         if (!response.ok) {
           throw new Error(`HTTP error! Status: ${response.status}`);
         }
@@ -143,6 +150,7 @@ export default function UserManagement() {
 
   // Add new user
   const handleAddUser = async() => {
+    const token = localStorage.getItem("token");  
   
     try {
       const response = await fetch(`http://195.35.24.128:8081/api/user/new`,{
@@ -150,7 +158,7 @@ export default function UserManagement() {
         
         headers: {
            "Content-Type": "application/json" ,
-           Authorization: `Bearer ${process.env.NEXT_PUBLIC_JWT_SECRET}`
+           Authorization: `Bearer ${token}`
           },
           body:JSON.stringify(newUser)
       });
@@ -172,8 +180,8 @@ export default function UserManagement() {
       // setFilteredUsers(mockUsers);
     }
     
-    setUsers([...users, user]);
-    setFilteredUsers([...filteredUsers, user]);
+    setUsers([...users, newUser]);
+    setFilteredUsers([...filteredUsers, newUser]);
     setIsAddUserOpen(false);
     setNewUser({
       email: '',
@@ -190,7 +198,35 @@ export default function UserManagement() {
   };
 
   // Edit user
-  const handleEditUser = () => {
+  const handleEditUser = async () => {
+    const token = localStorage.getItem("token");  
+    try {
+      const response = await fetch(`http://195.35.24.128:8081/api/user/update`,{
+        method: "POST",
+        
+        headers: {
+           "Content-Type": "application/json" ,
+           Authorization: `Bearer ${token}`
+          },
+          body:JSON.stringify(currentUser)
+      });
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! Status: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      setUsers(data.data);
+      setFilteredUsers(data.data);
+      console.log('Users fetched successfully:', data);
+      toast.success("Données chargées avec succèes")
+    } catch (err) {
+      console.error('Error fetching users:', err.message);
+      toast.error("Erreur lors de la recuperation des donnees")
+      // Optionally fall back to mock data if API fails
+      // setUsers(mockUsers);
+      // setFilteredUsers(mockUsers);
+    }
     if (!currentUser) return;
     
     const updatedUsers = users.map(user => 
@@ -208,10 +244,79 @@ export default function UserManagement() {
     setCurrentUser(null);
     toast.success('Utilisateur mis à jour avec succès');
   };
-
-  // Delete user
-  const handleDeleteUser = () => {
+  //Enable User
+  const handleEnableUser = async () => {
     if (!currentUser) return;
+    const token = localStorage.getItem("token");  
+    try {
+      const response = await fetch(`http://195.35.24.128:8081/api/user/enable?username=${currentUser.email}`,{
+        method: "POST",
+        
+        headers: {
+           "Content-Type": "application/json" ,
+           Authorization: `Bearer ${token}`
+          },
+          body:JSON.stringify(currentUser)
+      });
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! Status: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      setUsers(data.data);
+      setFilteredUsers(data.data);
+      console.log('Users fetched successfully:', data);
+      toast.success("Données activer avec succèes")
+    } catch (err) {
+      console.error('Error fetching users:', err.message);
+      toast.error("Erreur lors de la recuperation des donnees")
+      // Optionally fall back to mock data if API fails
+      // setUsers(mockUsers);
+      // setFilteredUsers(mockUsers);
+    }
+    
+    const updatedUsers = users.filter(user => user.id !== currentUser.id);
+    setUsers(updatedUsers);
+    setFilteredUsers(filteredUsers.filter(user => user.id !== currentUser.id));
+    
+    setIsEnableUserOpen(false);
+    setCurrentUser(null);
+    toast.success('Utilisateur activé avec succès');
+  };
+
+
+  // Disable user
+  const handleDisableUser = async () => {
+    if (!currentUser) return;
+    const token = localStorage.getItem("token");  
+    try {
+      const response = await fetch(`http://195.35.24.128:8081/api/user/disable?username=${currentUser.email}`,{
+        method: "POST",
+        
+        headers: {
+           "Content-Type": "application/json" ,
+           Authorization: `Bearer ${token}`
+          },
+          body:JSON.stringify(currentUser)
+      });
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! Status: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      setUsers(data.data);
+      setFilteredUsers(data.data);
+      console.log('Users fetched successfully:', data);
+      toast.success("Données chargées avec succèes")
+    } catch (err) {
+      console.error('Error fetching users:', err.message);
+      toast.error("Erreur lors de la recuperation des donnees")
+      // Optionally fall back to mock data if API fails
+      // setUsers(mockUsers);
+      // setFilteredUsers(mockUsers);
+    }
     
     const updatedUsers = users.filter(user => user.id !== currentUser.id);
     setUsers(updatedUsers);
@@ -240,13 +345,13 @@ export default function UserManagement() {
   // Get role badge style
   const getRoleBadge = (role) => {
     switch (role) {
-      case 'Administrateur':
+      case 'ADMIN':
         return 'bg-purple-100 text-purple-800';
-      case 'Vendeur':
+      case 'VENDEUR':
         return 'bg-blue-100 text-blue-800';
-      case 'Livreur':
+      case 'LIVREUR':
         return 'bg-green-100 text-green-800';
-      case 'Client':
+      case 'CLIENT':
         return 'bg-gray-100 text-gray-800';
       default:
         return 'bg-gray-100 text-gray-800';
@@ -256,13 +361,13 @@ export default function UserManagement() {
   // Get translated role name
   const getRoleName = (role) => {
     switch (role) {
-      case 'Administrateur':
+      case 'ADMIN':
         return 'Administrateur';
-      case 'seller':
+      case 'VENDEUR':
         return 'Vendeur';
-      case 'Livreur':
+      case 'LIVREUR':
         return 'Livreur';
-      case 'client':
+      case 'CLIENT':
         return 'Client';
       default:
         return role;
@@ -275,7 +380,7 @@ export default function UserManagement() {
         <h1 className="text-2xl font-bold">Gestion des utilisateurs</h1>
         {/* <p className="text-gray-500 mt-1">Ajouter, modifier ou supprimer des utilisateurs</p> */}
       </div>
-
+      <Toaster />
       <Card>
         <CardHeader className="pb-2">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
@@ -444,6 +549,7 @@ export default function UserManagement() {
                   <TableHead>Email</TableHead>
                   <TableHead>Téléphone</TableHead>
                   <TableHead>Date de création</TableHead>
+                  <TableHead>Status</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
@@ -465,6 +571,7 @@ export default function UserManagement() {
                       <TableCell>{user.email}</TableCell>
                       <TableCell>{user.telephone || "-"}</TableCell>
                       <TableCell>{formatDate(user.createdAt)}</TableCell>
+                      <TableCell>{user.status.toString()}</TableCell>
                       <TableCell className="text-right">
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
@@ -488,12 +595,22 @@ export default function UserManagement() {
                             <DropdownMenuItem
                               onClick={() => {
                                 setCurrentUser(user);
+                                setIsEnableUserOpen(true);
+                              }}
+                              className="text-green-600"
+                            >
+                              <UserCheck className="mr-2 h-4 w-4" />
+                              Activer
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              onClick={() => {
+                                setCurrentUser(user);
                                 setIsDeleteUserOpen(true);
                               }}
                               className="text-red-600"
                             >
-                              <Trash2 className="mr-2 h-4 w-4" />
-                              Supprimer
+                              <UserX className="mr-2 h-4 w-4" />
+                              Desactiver
                             </DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>
@@ -595,8 +712,8 @@ export default function UserManagement() {
                 <Input
                   id="edit-address"
                   className="col-span-3"
-                  value={currentUser.address || ''}
-                  onChange={(e) => setCurrentUser({...currentUser, addresse: e.target.value})}
+                  value={currentUser.adresse || ''}
+                  onChange={(e) => setCurrentUser({...currentUser, adresse: e.target.value})}
                 />
               </div>
             </div>
@@ -614,9 +731,9 @@ export default function UserManagement() {
       <Dialog open={isDeleteUserOpen} onOpenChange={setIsDeleteUserOpen}>
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
-            <DialogTitle>Supprimer l'utilisateur</DialogTitle>
+            <DialogTitle>Désactiver l'utilisateur</DialogTitle>
             <DialogDescription>
-              Êtes-vous sûr de vouloir supprimer cet utilisateur ? Cette action est irréversible.
+              Êtes-vous sûr de vouloir désactiver cet utilisateur ? 
             </DialogDescription>
           </DialogHeader>
           {currentUser && (
@@ -651,8 +768,55 @@ export default function UserManagement() {
             <Button variant="outline" onClick={() => setIsDeleteUserOpen(false)}>
               Annuler
             </Button>
-            <Button variant="destructive" onClick={handleDeleteUser}>
-              Supprimer
+            <Button variant="destructive" onClick={handleDisableUser}>
+              Désactiver
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={isEnableUserOpen} onOpenChange={setIsEnableUserOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Activer l'utilisateur</DialogTitle>
+            <DialogDescription>
+              Êtes-vous sûr de vouloir Activer cet utilisateur ? 
+            </DialogDescription>
+          </DialogHeader>
+          {currentUser && (
+            <div className="py-4">
+              <div className="flex items-center space-x-4 bg-gray-50 p-4 rounded-lg">
+                <div className="h-10 w-10 rounded-full bg-gray-200 flex items-center justify-center">
+                  <UserCircle className="h-6 w-6 text-gray-500" />
+                </div>
+                <div>
+                  <p className="font-medium">{currentUser.first_name} {currentUser.last_name}</p>
+                  <div className="flex items-center text-sm text-gray-500">
+                    <Mail className="h-3 w-3 mr-1" />
+                    {currentUser.email}
+                  </div>
+                  {currentUser.tel && (
+                    <div className="flex items-center text-sm text-gray-500">
+                      <Phone className="h-3 w-3 mr-1" />
+                      {currentUser.tel}
+                    </div>
+                  )}
+                  {currentUser.address && (
+                    <div className="flex items-center text-sm text-gray-500">
+                      <MapPin className="h-3 w-3 mr-1" />
+                      {currentUser.address}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="destructive" onClick={() => setIsEnableUserOpen(false)}>
+              Annuler
+            </Button>
+            <Button variant="success" onClick={handleEnableUser}>
+              Activer
             </Button>
           </DialogFooter>
         </DialogContent>
