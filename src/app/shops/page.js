@@ -49,6 +49,13 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 export default function ShopManagement() {
   const [shops, setShops] = useState([]);
@@ -58,6 +65,7 @@ export default function ShopManagement() {
   const [isEditShopOpen, setIsEditShopOpen] = useState(false);
   const [isDeleteShopOpen, setIsDeleteShopOpen] = useState(false);
   const [currentShop, setCurrentShop] = useState(null);
+  const [users, setUsers] = useState([]);
   const [newShop, setNewShop] = useState({
     nom: "",
     description: "",
@@ -65,12 +73,11 @@ export default function ShopManagement() {
     adresse: "",
     longitude: 0,
     latitude: 0,
-    banner: null, // Stocke l'objet File brut
+    banner: null,
     vendeurId: 0,
     acteurId: 0,
   });
 
-  // ... (useEffect pour fetchShops reste inchangé)
   useEffect(() => {
     const username = localStorage.getItem("username");
     const token = localStorage.getItem("token");
@@ -95,16 +102,42 @@ export default function ShopManagement() {
         const data = await response.json();
         setShops(data.data);
         setFilteredShops(data.data);
-        toast.success("Boutiques chargées avec succès");
+        toast.success(data.message);
       } catch (err) {
         console.error("Error fetching shops:", err.message);
         toast.error("Erreur lors de la récupération des boutiques");
       }
     };
 
+    const fetchUsers = async () => {
+      try {
+        const response = await fetch(
+          `http://195.35.24.128:8081/api/user/liste?username=${username}`,
+          {
+            method: "GET",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+        if (!response.ok) {
+          throw new Error(`HTTP error! Status: ${response.status}`);
+        }
+
+        const data = await response.json();
+        setUsers(data.data);
+        toast.success("Utilisateurs chargés avec succès");
+      } catch (err) {
+        console.error("Error fetching users:", err.message);
+        toast.error("Erreur lors de la récupération des utilisateurs");
+      }
+    };
+
     fetchShops();
+    fetchUsers();
   }, []);
-  // Handle search (inchangé)
+
   const handleSearch = (e) => {
     const query = e.target.value.toLowerCase();
     setSearchQuery(query);
@@ -117,7 +150,6 @@ export default function ShopManagement() {
     setFilteredShops(filtered);
   };
 
-  // Handle image change (stocke l'objet File brut)
   const handleImageChange = (e, isEdit = false) => {
     const file = e.target.files[0];
     if (file) {
@@ -129,7 +161,6 @@ export default function ShopManagement() {
     }
   };
 
-  // Add new shop with FormData
   const handleAddShop = async () => {
     if (!newShop.nom || !newShop.description) {
       toast.error("Le nom et la description sont obligatoires");
@@ -145,17 +176,16 @@ export default function ShopManagement() {
     formData.append("longitude", newShop.longitude);
     formData.append("latitude", newShop.latitude);
     if (newShop.banner) {
-      formData.append("banner", newShop.banner); // Ajoute le fichier brut
+      formData.append("banner", newShop.banner);
     }
     formData.append("vendeurId", newShop.vendeurId);
     formData.append("acteurId", newShop.acteurId);
-
+    console.log(formData)
     try {
       const response = await fetch(`http://195.35.24.128:8081/api/shop/new`, {
         method: "POST",
         headers: {
           Authorization: `Bearer ${token}`,
-          // Pas de Content-Type ici, le navigateur le gère avec FormData
         },
         body: formData,
       });
@@ -186,13 +216,12 @@ export default function ShopManagement() {
     }
   };
 
-  // Edit shop with FormData
   const handleEditShop = async () => {
     if (!currentShop) return;
 
     const token = localStorage.getItem("token");
     const formData = new FormData();
-    formData.append("id", currentShop.id); // Ajouter l'ID pour l'update
+    formData.append("id", currentShop.id);
     formData.append("nom", currentShop.nom);
     formData.append("description", currentShop.description);
     formData.append("telephone", currentShop.telephone);
@@ -200,14 +229,15 @@ export default function ShopManagement() {
     formData.append("longitude", currentShop.longitude);
     formData.append("latitude", currentShop.latitude);
     if (currentShop.banner instanceof File) {
-      formData.append("banner", currentShop.banner); // Ajoute uniquement si c'est un nouveau fichier
+      formData.append("banner", currentShop.banner);
     }
     formData.append("vendeurId", currentShop.vendeurId);
     formData.append("acteurId", currentShop.acteurId);
-
+console.log(formData)
+console.log(currentShop.id)
     try {
       const response = await fetch(`http://195.35.24.128:8081/api/shop/update`, {
-        method: "POST",
+        method: "PUT",
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -237,14 +267,13 @@ export default function ShopManagement() {
     }
   };
 
-  // Delete shop (inchangé car pas de fichier)
   const handleDeleteShop = async () => {
     if (!currentShop) return;
 
     const token = localStorage.getItem("token");
     try {
       const response = await fetch(
-        `http://195.35.24.128:8081/api/shop/delete?id=${currentShop.id}`,
+        `http://195.35.24.128:8081/api/shop/delete/${currentShop.id}`,
         {
           method: "DELETE",
           headers: {
@@ -271,7 +300,6 @@ export default function ShopManagement() {
     }
   };
 
-  // Format date (inchangé)
   const formatDate = (dateString) => {
     try {
       const date = new Date(dateString);
@@ -362,18 +390,38 @@ export default function ShopManagement() {
                         />
                       </div>
                       <div className="space-y-2">
-                        <Label htmlFor="vendeurId">ID Vendeur</Label>
-                        <Input
-                          id="vendeurId"
-                          type="number"
-                          value={newShop.vendeurId}
-                          onChange={(e) =>
+                        <Label htmlFor="vendeurId">Vendeur</Label>
+                        <Select
+                          value={newShop.vendeurId.toString()}
+                          onValueChange={(value) =>
                             setNewShop({
                               ...newShop,
-                              vendeurId: parseInt(e.target.value) || 0,
+                              vendeurId: parseInt(value) || 0,
                             })
                           }
-                        />
+                        >
+                          <SelectTrigger className="w-full">
+                            <SelectValue placeholder="Sélectionner un vendeur" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {users && users.length > 0 ? (
+                              users
+                                .filter((user) => user.role === "VENDEUR")
+                                .map((user) => (
+                                  <SelectItem
+                                    key={user.id}
+                                    value={user.id.toString()}
+                                  >
+                                    {user.nom} {user.prenom}
+                                  </SelectItem>
+                                ))
+                            ) : (
+                              <SelectItem value="0" disabled>
+                                Aucun vendeur trouvé
+                              </SelectItem>
+                            )}
+                          </SelectContent>
+                        </Select>
                       </div>
                       <div className="space-y-2">
                         <Label htmlFor="acteurId">ID Acteur</Label>
@@ -487,7 +535,7 @@ export default function ShopManagement() {
                           <img
                             src={
                               shop.banner instanceof File
-                                ? URL.createObjectURL(shop.banner)
+                                ? URL.createObjectURL("http://195.35.24.128/"+shop.banner)
                                 : shop.banner
                             }
                             alt="Bannière"
@@ -592,20 +640,40 @@ export default function ShopManagement() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="edit-vendeurId">ID Vendeur</Label>
-                  <Input
-                    id="edit-vendeurId"
-                    type="number"
-                    value={currentShop.vendeurId}
-                    onChange={(e) =>
+                  <Label htmlFor="edit-vendeurId">Vendeur</Label>
+                  <Select
+                    value={currentShop.vendeurId.toString()}
+                    onValueChange={(value) =>
                       setCurrentShop({
                         ...currentShop,
-                        vendeurId: parseInt(e.target.value) || 0,
+                        vendeurId: parseInt(value) || 0,
                       })
                     }
-                  />
+                  >
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Sélectionner un vendeur" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {users && users.length > 0 ? (
+                        users
+                          .filter((user) => user.role === "VENDEUR")
+                          .map((user) => (
+                            <SelectItem
+                              key={user.id}
+                              value={user.id.toString()}
+                            >
+                              {user.nom} {user.prenom}
+                            </SelectItem>
+                          ))
+                      ) : (
+                        <SelectItem value="0" disabled>
+                          Aucun vendeur trouvé
+                        </SelectItem>
+                      )}
+                    </SelectContent>
+                  </Select>
                 </div>
-                <div className="space-y-2">
+                {/* <div className="space-y-2">
                   <Label htmlFor="edit-acteurId">ID Acteur</Label>
                   <Input
                     id="edit-acteurId"
@@ -618,8 +686,8 @@ export default function ShopManagement() {
                       })
                     }
                   />
-                </div>
-                <div className="space-y-2">
+                </div> */}
+                {/* <div className="space-y-2">
                   <Label htmlFor="edit-longitude">Longitude</Label>
                   <Input
                     id="edit-longitude"
@@ -633,8 +701,8 @@ export default function ShopManagement() {
                       })
                     }
                   />
-                </div>
-                <div className="space-y-2">
+                </div> */}
+                {/* <div className="space-y-2">
                   <Label htmlFor="edit-latitude">Latitude</Label>
                   <Input
                     id="edit-latitude"
@@ -648,7 +716,7 @@ export default function ShopManagement() {
                       })
                     }
                   />
-                </div>
+                </div> */}
               </div>
               <div className="space-y-2">
                 <Label htmlFor="edit-description">Description</Label>
@@ -694,13 +762,15 @@ export default function ShopManagement() {
         </DialogContent>
       </Dialog>
 
-      {/* Delete Shop Dialog (inchangé) */}
+      {/* Delete Shop Dialog */}
       <Dialog open={isDeleteShopOpen} onOpenChange={setIsDeleteShopOpen}>
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
             <DialogTitle>Supprimer la boutique</DialogTitle>
             <DialogDescription>
               Êtes-vous sûr de vouloir supprimer cette boutique ?
+              Cette action va supprimer tous les produits reliés à cette boutique
+              Notez que action est irreversible !
             </DialogDescription>
           </DialogHeader>
           {currentShop && (

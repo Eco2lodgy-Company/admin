@@ -101,9 +101,10 @@ export default function LOGIN() {
         throw new Error("Données utilisateur invalides");
       }
 
-      const { role, email, } = result.data.userInfo;
+      const { role, email,id } = result.data.userInfo;
       const Token=result.data.token
       localStorage.setItem("username", email);
+      localStorage.setItem("logedUserId", id);
       localStorage.setItem("token", Token);
       console.log("Token",Token)
       // Afficher le message de succès avant la redirection

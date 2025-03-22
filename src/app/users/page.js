@@ -571,7 +571,7 @@ export default function UserManagement() {
                       <TableCell>{user.email}</TableCell>
                       <TableCell>{user.telephone || "-"}</TableCell>
                       <TableCell>{formatDate(user.createdAt)}</TableCell>
-                      <TableCell>{user.status.toString()}</TableCell>
+                      <TableCell>{user.status? "Actif" : "Inactif"}</TableCell>
                       <TableCell className="text-right">
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
