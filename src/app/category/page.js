@@ -64,11 +64,13 @@ export default function CategoryManagement() {
   const [isDeleteCategoryOpen, setIsDeleteCategoryOpen] = useState(false);
   const [currentCategory, setCurrentCategory] = useState(null);
   const [shops, setShops] = useState([]);
+  // const username = localStorage.getItem("username");
+// console.log(username)
   const [newCategory, setNewCategory] = useState({
     intitule: "",
     description: "",
     shopId: 0,
-    acteurUsername:""
+    acteurUsername: "",
   });
 
   useEffect(() => {
@@ -150,11 +152,13 @@ export default function CategoryManagement() {
     }
 
     const token = localStorage.getItem("token");
+    const username = localStorage.getItem("username");
+
     const formData = new FormData();
     formData.append("intitule", newCategory.intitule);
     formData.append("description", newCategory.description);
     formData.append("shopId", newCategory.shopId);
-    formData.append("acteurId", newCategory.acteurId);
+    formData.append("acteurUsername", username);
 
     try {
       const response = await fetch(`http://195.35.24.128:8081/api/productCategories/new`, {
@@ -164,7 +168,7 @@ export default function CategoryManagement() {
           Authorization: `Bearer ${token}`,
           
         },
-        body: JSON.stringify(newCategory),
+        body: JSON.stringify(formData),
       });
 
       if (!response.ok) {
@@ -201,7 +205,7 @@ export default function CategoryManagement() {
 
     try {
       const response = await fetch(
-        `http://195.35.24.128:8081/api/categorie/update`,
+        `http://195.35.24.128:8081/api/productCategories/update`,
         {
           method: "POST",
           headers: {
@@ -240,7 +244,7 @@ export default function CategoryManagement() {
     const token = localStorage.getItem("token");
     try {
       const response = await fetch(
-        `http://195.35.24.128:8081/api/categorie/delete?id=${currentCategory.id}`,
+        `http://195.35.24.128:8081/api/productCategories/delete?id=${currentCategory.id}`,
         {
           method: "DELETE",
           headers: {
@@ -375,7 +379,7 @@ export default function CategoryManagement() {
                           </SelectContent>
                         </Select>
                       </div>
-                      <div className="space-y-2">
+                      {/* <div className="space-y-2">
                         <Label htmlFor="acteurId">ID Acteur</Label>
                         <Input
                           id="acteurId"
@@ -388,7 +392,7 @@ export default function CategoryManagement() {
                             })
                           }
                         />
-                      </div>
+                      </div> */}
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="description">Description</Label>
@@ -403,6 +407,7 @@ export default function CategoryManagement() {
                         }
                       />
                     </div>
+                    
                   </div>
                   <DialogFooter>
                     <Button

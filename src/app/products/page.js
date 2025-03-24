@@ -1,7 +1,7 @@
 "use client";
+import { Badge } from "@/components/ui/badge"
 import React, { useState, useEffect } from "react";
 import { Toaster } from "@/components/ui/sonner";
-
 import {
   Card,
   CardContent,
@@ -10,6 +10,23 @@ import {
   CardTitle,
   CardFooter,
 } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import {
   Select,
   SelectContent,
@@ -22,15 +39,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
-import {
   PlusCircle,
   Search,
   Filter,
@@ -40,31 +48,451 @@ import {
   AlertCircle,
   Package,
   MoreHorizontal,
-  X,
-  Save,
+  Plus,
 } from "lucide-react";
 import { toast } from "sonner";
 
+// Fonction utilitaire pour formater les dates avec "/"
+const formatDateForAPI = (date) => {
+  const d = new Date(date);
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${year}/${month}/${day}`;
+};
+
+// Fonction utilitaire pour convertir une date avec "/" en format compatible avec <Input type="date">
+const formatDateForInput = (date) => {
+  if (!date) return "";
+  const [year, month, day] = date.split("/");
+  return `${year}-${month}-${day}`;
+};
+
+// Formulaire d'ajout de produit
+const AddProductForm = ({ onClose, onAdd, categories, shops, newProduct, setNewProduct }) => {
+  const handleFormChange = (e) => {
+    const { name, value } = e.target;
+    setNewProduct({
+      ...newProduct,
+      [name]: name === "prix" || name === "quantite" ? parseFloat(value) || 0 : value,
+    });
+  };
+
+  const handleImageChange = (e) => {
+    const file = e.target.files[0];
+    if (file) setNewProduct({ ...newProduct, image: file });
+  };
+
+  const handleAddProduct = async () => {
+    const username = localStorage.getItem("username");
+    const token = localStorage.getItem("token");
+    if (!newProduct.libelle || !newProduct.description) {
+      toast.error("Le libellé et la description sont obligatoires");
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append("libelle", newProduct.libelle);
+    formData.append("description", newProduct.description);
+    formData.append("prix", newProduct.prix);
+    formData.append("quantite", newProduct.quantite);
+    formData.append("codeQr", newProduct.codeQr || "");
+    if (newProduct.image) formData.append("image", newProduct.image);
+    formData.append("categorieId", newProduct.categorieId);
+    formData.append("shopId", newProduct.boutiqueId);
+    formData.append("expiredAt", formatDateForAPI(newProduct.expiredAt));
+    formData.append("acteurUsername", username);
+
+    try {
+      console.log("Adding product with data:", Object.fromEntries(formData));
+      const response = await fetch(`http://195.35.24.128:8081/api/products/new`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+        body: formData,
+      });
+
+      if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
+      const data = await response.json();
+      onAdd(data.data);
+      toast.success("Produit ajouté avec succès");
+      onClose();
+    } catch (err) {
+      console.error("Error adding product:", err.message);
+      toast.error("Erreur lors de l'ajout du produit");
+    }
+  };
+
+  return (
+    <DialogContent className="sm:max-w-[600px] max-h-[80vh] overflow-y-auto">
+      <DialogHeader>
+        <DialogTitle>Ajouter un produit</DialogTitle>
+        <DialogDescription>Créer un nouveau produit dans le système</DialogDescription>
+      </DialogHeader>
+      <div className="grid gap-4 py-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <Label htmlFor="libelle">Nom du produit</Label>
+            <Input
+              id="libelle"
+              name="libelle"
+              placeholder="Produit"
+              value={newProduct.libelle}
+              onChange={handleFormChange}
+              required
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="expiredAt">Date d'expiration</Label>
+            <Input
+              type="date"
+              id="expiredAt"
+              name="expiredAt"
+              value={newProduct.expiredAt}
+              onChange={handleFormChange}
+              required
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="categorieId">Catégorie</Label>
+            <Select
+              value={newProduct.categorieId.toString()}
+              onValueChange={(value) =>
+                handleFormChange({ target: { name: "categorieId", value: parseInt(value) || 0 } })
+              }
+            >
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Sélectionner une catégorie" />
+              </SelectTrigger>
+              <SelectContent>
+                {categories.map((category) => (
+                  <SelectItem key={category.id} value={category.id.toString()}>
+                    {category.intitule}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="prix">Prix (€)</Label>
+            <Input
+              id="prix"
+              name="prix"
+              type="number"
+              min="0"
+              step="0.01"
+              placeholder="8.99"
+              value={newProduct.prix}
+              onChange={handleFormChange}
+              required
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="boutiqueId">Boutique</Label>
+            <Select
+              value={newProduct.boutiqueId.toString()}
+              onValueChange={(value) =>
+                handleFormChange({ target: { name: "boutiqueId", value: parseInt(value) || 0 } })
+              }
+            >
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Sélectionner une boutique" />
+              </SelectTrigger>
+              <SelectContent>
+                {shops.map((shop) => (
+                  <SelectItem key={shop.id} value={shop.id.toString()}>
+                    {shop.nom}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="quantite">Quantité</Label>
+            <Input
+              id="quantite"
+              name="quantite"
+              type="number"
+              min="0"
+              placeholder="0"
+              value={newProduct.quantite}
+              onChange={handleFormChange}
+              required
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="codeQr">Code QR</Label>
+            <Input
+              id="codeQr"
+              name="codeQr"
+              placeholder="Code QR"
+              value={newProduct.codeQr}
+              onChange={handleFormChange}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="image">Image</Label>
+            <Input
+              id="image"
+              name="image"
+              type="file"
+              accept="image/*"
+              onChange={handleImageChange}
+            />
+          </div>
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="description">Description</Label>
+          <Textarea
+            id="description"
+            name="description"
+            placeholder="Description du produit"
+            value={newProduct.description}
+            onChange={handleFormChange}
+            required
+          />
+        </div>
+      </div>
+      <DialogFooter>
+        <Button variant="outline" onClick={onClose}>
+          Annuler
+        </Button>
+        <Button onClick={handleAddProduct}>Ajouter</Button>
+      </DialogFooter>
+    </DialogContent>
+  );
+};
+
+// Formulaire de modification de produit
+const EditProductForm = ({ onClose, onEdit, categories, shops, currentProduct, setCurrentProduct }) => {
+  const handleFormChange = (e) => {
+    const { name, value } = e.target;
+    setCurrentProduct({
+      ...currentProduct,
+      [name]: name === "prix" || name === "quantite" ? parseFloat(value) || 0 : value,
+    });
+  };
+
+  const handleImageChange = (e) => {
+    const file = e.target.files[0];
+    if (file) setCurrentProduct({ ...currentProduct, image: file });
+  };
+
+  const handleEditProduct = async () => {
+    const token = localStorage.getItem("token");
+    const username = localStorage.getItem("username");
+
+    if (!currentProduct.libelle || !currentProduct.description) {
+      toast.error("Le libellé et la description sont obligatoires");
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append("id", currentProduct.id);
+    formData.append("libelle", currentProduct.libelle);
+    formData.append("description", currentProduct.description);
+    formData.append("prix", currentProduct.prix);
+    formData.append("quantite", currentProduct.quantite);
+    formData.append("codeQr", currentProduct.codeQr || "");
+    if (currentProduct.image instanceof File) formData.append("image", currentProduct.image);
+    formData.append("categorieId", currentProduct.categorieId);
+    formData.append("shopId", currentProduct.boutiqueId);
+    formData.append("acteurUsername", username);
+    formData.append("expiredAt", formatDateForAPI(currentProduct.expiredAt));
+
+    try {
+      console.log("Updating product with data:", Object.fromEntries(formData));
+      const response = await fetch(
+        `http://195.35.24.128:8081/api/products/update/${currentProduct.id}`,
+        {
+          method: "PUT",
+          headers: { Authorization: `Bearer ${token}` },
+          body: formData,
+        }
+      );
+
+      if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
+      const data = await response.json();
+      onEdit(data.data);
+      toast.success("Produit mis à jour avec succès");
+      onClose();
+    } catch (err) {
+      console.error("Error updating product:", err.message);
+      toast.error("Erreur lors de la mise à jour du produit");
+    }
+  };
+
+  return (
+    <DialogContent className="sm:max-w-[600px] max-h-[80vh] overflow-y-auto">
+      <DialogHeader>
+        <DialogTitle>Modifier le produit</DialogTitle>
+        <DialogDescription>Mettre à jour les informations du produit</DialogDescription>
+      </DialogHeader>
+      <div className="grid gap-4 py-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <Label htmlFor="libelle">Nom du produit</Label>
+            <Input
+              id="libelle"
+              name="libelle"
+              placeholder="Produit"
+              value={currentProduct.libelle}
+              onChange={handleFormChange}
+              required
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="expiredAt">Date d'expiration</Label>
+            <Input
+              type="date"
+              id="expiredAt"
+              name="expiredAt"
+              value={currentProduct.expiredAt}
+              onChange={handleFormChange}
+              required
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="categorieId">Catégorie</Label>
+            <Select
+              value={currentProduct.categorieId.toString()}
+              onValueChange={(value) =>
+                handleFormChange({ target: { name: "categorieId", value: parseInt(value) || 0 } })
+              }
+            >
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Sélectionner une catégorie" />
+              </SelectTrigger>
+              <SelectContent>
+                {categories.map((category) => (
+                  <SelectItem key={category.id} value={category.id.toString()}>
+                    {category.intitule}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="prix">Prix (€)</Label>
+            <Input
+              id="prix"
+              name="prix"
+              type="number"
+              min="0"
+              step="0.01"
+              placeholder="8.99"
+              value={currentProduct.prix}
+              onChange={handleFormChange}
+              required
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="boutiqueId">Boutique</Label>
+            <Select
+              value={currentProduct.boutiqueId.toString()}
+              onValueChange={(value) =>
+                handleFormChange({ target: { name: "boutiqueId", value: parseInt(value) || 0 } })
+              }
+            >
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Sélectionner une boutique" />
+              </SelectTrigger>
+              <SelectContent>
+                {shops.map((shop) => (
+                  <SelectItem key={shop.id} value={shop.id.toString()}>
+                    {shop.nom}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="quantite">Quantité</Label>
+            <Input
+              id="quantite"
+              name="quantite"
+              type="number"
+              min="0"
+              placeholder="0"
+              value={currentProduct.quantite}
+              onChange={handleFormChange}
+              required
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="codeQr">Code QR</Label>
+            <Input
+              id="codeQr"
+              name="codeQr"
+              placeholder="Code QR"
+              value={currentProduct.codeQr}
+              onChange={handleFormChange}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="image">Image</Label>
+            <Input
+              id="image"
+              name="image"
+              type="file"
+              accept="image/*"
+              onChange={handleImageChange}
+            />
+            {currentProduct.image && (
+              <img
+                src={
+                  currentProduct.image instanceof File
+                    ? URL.createObjectURL(currentProduct.image)
+                    : currentProduct.image
+                }
+                alt="Image du produit"
+                className="mt-2 w-32 h-32 object-cover rounded"
+              />
+            )}
+          </div>
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="description">Description</Label>
+          <Textarea
+            id="description"
+            name="description"
+            placeholder="Description du produit"
+            value={currentProduct.description}
+            onChange={handleFormChange}
+            required
+          />
+        </div>
+      </div>
+      <DialogFooter>
+        <Button variant="outline" onClick={onClose}>
+          Annuler
+        </Button>
+        <Button onClick={handleEditProduct}>Enregistrer</Button>
+      </DialogFooter>
+    </DialogContent>
+  );
+};
+
+// Composant principal
 const ProductManagement = () => {
   const [products, setProducts] = useState([]);
   const [filteredProducts, setFilteredProducts] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
-  const [isEditing, setIsEditing] = useState(false);
+  const [isAddProductOpen, setIsAddProductOpen] = useState(false);
+  const [isEditProductOpen, setIsEditProductOpen] = useState(false);
   const [currentProduct, setCurrentProduct] = useState(null);
   const [categories, setCategories] = useState([]);
   const [shops, setShops] = useState([]);
   const [newProduct, setNewProduct] = useState({
     libelle: "",
     description: "",
-    expiredAt:"",
+    expiredAt: "",
     prix: 0,
     quantite: 0,
     codeQr: "",
     image: null,
     categorieId: 0,
     boutiqueId: 0,
-    username:"username",
-    acteurId: 0,
+    acteurUsername: "",
   });
 
   useEffect(() => {
@@ -109,7 +537,6 @@ const ProductManagement = () => {
         if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
         const data = await response.json();
         setCategories(data.data);
-        console.log(data.message)
       } catch (err) {
         console.error("Error fetching categories:", err.message);
         toast.error("Erreur lors de la récupération des catégories");
@@ -142,166 +569,52 @@ const ProductManagement = () => {
     fetchShops();
   }, []);
 
-  // Filtre des produits
   const filteredProductsList = products.filter((product) =>
     product?.libelle?.toLowerCase().includes(searchQuery.toLowerCase()) ||
     product?.categorieIntitule?.toLowerCase().includes(searchQuery.toLowerCase()) ||
     product?.boutiqueNom?.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  // Gestion du statut avec badge coloré
   const getStatusBadge = (quantite) => {
-    if (quantite === 0) {
-      return <Badge variant="destructive">Rupture de stock</Badge>;
-    } else if (quantite <= 10) {
-      return <Badge className="bg-yellow-500">Stock faible</Badge>;
-    } else {
-      return <Badge variant="default" className="bg-green-500">Disponible</Badge>;
-    }
+    if (quantite === 0) return <Badge variant="destructive">Rupture de stock</Badge>;
+    if (quantite <= 10) return <Badge className="bg-yellow-500">Stock faible</Badge>;
+    return <Badge variant="default" className="bg-green-500">Disponible</Badge>;
   };
 
-  // Gérer l'ajout d'un nouveau produit
-  const handleAddProduct = async () => {
-    const username = localStorage.getItem("username");
-    if (!newProduct.libelle || !newProduct.description) {
-      toast.error("Le libellé et la description sont obligatoires");
-      return;
-    }
-
-    const token = localStorage.getItem("token");
-    const logedUserId = localStorage.getItem("logedUserId");
-    const formData = new FormData();
-    formData.append("libelle", newProduct.libelle);
-    formData.append("description", newProduct.description);
-    formData.append("prix", newProduct.prix);
-    formData.append("quantite", newProduct.quantite);
-    formData.append("codeQr", newProduct.codeQr);
-    if (newProduct.image) {
-      formData.append("image", newProduct.image);
-    }
-    formData.append("categorieId", newProduct.categorieId);
-    formData.append("shopId", newProduct.boutiqueId);
-    formData.append("expiredAt", newProduct.date);
-    formData.append("acteurUsername", username); 
-
-    try {
-      console.log("expiredAt",newProduct.date)
-      console.log("formData",formData)
-      console.log("token",token)
-      console.log("logedUserId",logedUserId)
-      console.log("newProduct",newProduct.username)
-      const response = await fetch(`http://195.35.24.128:8081/api/products/new`, {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-        body: formData,
-      });
-
-      if (!response.ok) {
-        
-        throw new Error(`HTTP error! Status: ${response.status}`);
-        toast(response.message)
-      }
-
-      const data = await response.json();
-      setProducts([...products, data.data]);
-      setFilteredProducts([...filteredProducts, data.data]);
-      setIsEditing(false);
-      setNewProduct({
-        libelle: "",
-        description: "",
-        prix: 0,
-        quantite: 0,
-        codeQr: "",
-        imagePath: null,
-        categorieId: 0,
-        boutiqueId: 0,
-        expiredAt:'',
-        acteurId: 0,
-      });
-      toast.success("Produit ajouté avec succès");
-    } catch (err) {
-      console.error("Error adding product:", err.message);
-      toast.error("Erreur lors de l'ajout du produit");
-    }
+  const handleOpenAddProduct = () => {
+    setIsAddProductOpen(true);
   };
 
-  // Gérer la modification d'un produit
-  const handleEditProduct = async () => {
-    if (!currentProduct) return;
-
-    const token = localStorage.getItem("token");
-    const formData = new FormData();
-    formData.append("id", currentProduct.id);
-    formData.append("libelle", currentProduct.libelle);
-    formData.append("description", currentProduct.description);
-    formData.append("prix", currentProduct.prix);
-    formData.append("quantite", currentProduct.quantite);
-    formData.append("codeQr", currentProduct.codeQr);
-    if (currentProduct.imagePath instanceof File) {
-      formData.append("imagePath", currentProduct.imagePath);
-    }
-    formData.append("categorieId", currentProduct.categorieId);
-    formData.append("boutiqueId", currentProduct.boutiqueId);
-    formData.append("acteurId", currentProduct.acteurId);
-    formData.append("expiredat", currentProduct.expiredAt);
-
-    try {
-      const response = await fetch(`http://195.35.24.128:8081/api/products/update`, {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-        body: formData,
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! Status: ${response.status}`);
-      }
-
-      const data = await response.json();
-      const updatedProducts = products.map((product) =>
-        product.id === currentProduct.id ? data.data : product
-      );
-      setProducts(updatedProducts);
-      setFilteredProducts(
-        filteredProducts.map((product) =>
-          product.id === currentProduct.id ? data.data : product
-        )
-      );
-      setIsEditing(false);
-      setCurrentProduct(null);
-      toast.success("Produit mis à jour avec succès");
-    } catch (err) {
-      console.error("Error updating product:", err.message);
-      toast.error("Erreur lors de la mise à jour du produit");
-    }
+  const handleOpenEditProduct = (product) => {
+    setCurrentProduct({
+      id: product.id,
+      libelle: product.libelle,
+      description: product.description,
+      expiredAt: product.expiredAt, // La date est déjà au format YYYY/MM/DD depuis le backend
+      prix: product.prix,
+      quantite: product.quantite,
+      codeQr: product.codeQr,
+      image: product.image,
+      categorieId: product.categorieId,
+      boutiqueId: product.boutiqueId,
+      acteurUsername: product.acteurUsername,
+    });
+    setIsEditProductOpen(true);
   };
 
-  // Gérer la suppression d'un produit
   const handleDeleteProduct = async (id) => {
     const token = localStorage.getItem("token");
     try {
       const response = await fetch(
-        `http://195.35.24.128:8081/api/products/delete?id=${id}`,
+        `http://195.35.24.128:8081/api/products/delete/${id}`,
         {
           method: "DELETE",
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
+          headers: { Authorization: `Bearer ${token}` },
         }
       );
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! Status: ${response.status}`);
-      }
-
-      const updatedProducts = products.filter((product) => product.id !== id);
-      setProducts(updatedProducts);
-      setFilteredProducts(
-        filteredProducts.filter((product) => product.id !== id)
-      );
+      if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
+      setProducts(products.filter((product) => product.id !== id));
+      setFilteredProducts(filteredProducts.filter((product) => product.id !== id));
       toast.success("Produit supprimé avec succès");
     } catch (err) {
       console.error("Error deleting product:", err.message);
@@ -309,68 +622,32 @@ const ProductManagement = () => {
     }
   };
 
-  // Gérer l'ouverture du formulaire d'ajout
-  const handleOpenAddProduct = () => {
-    setCurrentProduct(null);
+  const handleAddSuccess = (newProductData) => {
+    setProducts([...products, newProductData]);
+    setFilteredProducts([...filteredProducts, newProductData]);
     setNewProduct({
       libelle: "",
       description: "",
+      expiredAt: "",
       prix: 0,
       quantite: 0,
       codeQr: "",
-      date:"",
-      imagePath: null,
+      image: null,
       categorieId: 0,
       boutiqueId: 0,
-      acteurId: 0,
+      acteurUsername: "",
     });
-    setIsEditing(true);
+    setIsAddProductOpen(false);
   };
 
-  // Gérer l'ouverture du formulaire de modification
-  const handleOpenEditProduct = (product) => {
-    setCurrentProduct(product);
-    setNewProduct({
-      libelle: product.libelle,
-      description: product.description,
-      prix: product.prix,
-      quantite: product.quantite,
-      codeQr: product.codeQr,
-      imagePath: product.imagePath,
-      categorieId: product.categorieId,
-      boutiqueId: product.boutiqueId,
-      acteurId: product.acteurId,
-      expiredAt:product.expiredAt
-    });
-    setIsEditing(true);
-  };
-
-  // Gérer les changements de formulaire
-  const handleFormChange = (e) => {
-    const { name, value } = e.target;
-    const updatedData = {
-      ...newProduct,
-      [name]:
-        name === "prix" || name === "quantite" || name === "acteurId"
-          ? parseFloat(value) || 0
-          : value,
-    };
-    if (currentProduct) {
-      setCurrentProduct(updatedData);
-    } else {
-      setNewProduct(updatedData);
-    }
-  };
-
-  const handleImageChange = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      if (currentProduct) {
-        setCurrentProduct({ ...currentProduct, imagePath: file });
-      } else {
-        setNewProduct({ ...newProduct, imagePath: file });
-      }
-    }
+  const handleEditSuccess = (updatedProduct) => {
+    const updatedProducts = products.map((product) =>
+      product.id === updatedProduct.id ? updatedProduct : product
+    );
+    setProducts(updatedProducts);
+    setFilteredProducts(updatedProducts);
+    setCurrentProduct(null);
+    setIsEditProductOpen(false);
   };
 
   return (
@@ -381,13 +658,24 @@ const ProductManagement = () => {
           <p className="text-gray-500 mt-1">Gérez votre catalogue de produits et les stocks</p>
         </div>
         <Toaster />
-        <Button onClick={handleOpenAddProduct} className="flex items-center gap-2">
-          <PlusCircle size={16} />
-          <span>Ajouter un produit</span>
-        </Button>
+        <Dialog open={isAddProductOpen} onOpenChange={setIsAddProductOpen}>
+          <DialogTrigger asChild>
+            <Button onClick={handleOpenAddProduct} className="flex items-center gap-2">
+              <PlusCircle size={16} />
+              <span>Ajouter un produit</span>
+            </Button>
+          </DialogTrigger>
+          <AddProductForm
+            onClose={() => setIsAddProductOpen(false)}
+            onAdd={handleAddSuccess}
+            categories={categories}
+            shops={shops}
+            newProduct={newProduct}
+            setNewProduct={setNewProduct}
+          />
+        </Dialog>
       </div>
 
-      {/* Alerte de stock */}
       <div className="bg-yellow-50 border border-yellow-300 rounded-md p-4 mb-6 flex items-start">
         <AlertCircle className="text-yellow-500 mr-3 mt-0.5" size={20} />
         <div>
@@ -398,13 +686,12 @@ const ProductManagement = () => {
         </div>
       </div>
 
-      {/* Barre de recherche et filtres */}
       <div className="flex flex-col md:flex-row gap-4 mb-6">
         <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+          <Search className="absolute left-3 top-2.5 h-4 w-4 text-gray-500" />
           <Input
             placeholder="Rechercher un produit..."
-            className="pl-10"
+            className="pl-8"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />
@@ -421,7 +708,6 @@ const ProductManagement = () => {
         </div>
       </div>
 
-      {/* Carte principale avec tableau des produits */}
       <Card className="shadow-sm">
         <CardHeader className="pb-0">
           <CardTitle className="text-xl flex items-center">
@@ -497,197 +783,18 @@ const ProductManagement = () => {
         </CardFooter>
       </Card>
 
-      {/* Overlay et formulaire d'ajout/modification */}
-      {isEditing && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <Card className="sm:max-w-[425px]">
-            <CardHeader>
-              <CardTitle className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Package size={20} />
-                  <span>{currentProduct ? "Modifier le produit" : "Ajouter un produit"}</span>
-                </div>
-                <Button variant="ghost" size="icon" onClick={() => setIsEditing(false)}>
-                  <X size={18} />
-                </Button>
-              </CardTitle>
-              <CardDescription>
-                {currentProduct
-                  ? "Modifiez les informations du produit"
-                  : "Remplissez le formulaire pour ajouter un nouveau produit"}
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {/* <div className="space-y-2">
-                    <Label htmlFor="libelle">Nom du produit</Label>
-                    <Input
-                      id="libelle"
-                      name="libelle"
-                      type="hidden"
-                      placeholder="Produit"
-                      value={currentProduct ? currentProduct.username : newProduct.username}
-                      onChange={handleFormChange}
-                      required
-                    />
-                  </div> */}
-                  <div className="space-y-2">
-                    <Label htmlFor="libelle">Nom du produit</Label>
-                    <Input
-                      id="libelle"
-                      name="libelle"
-                      placeholder="Produit"
-                      value={currentProduct ? currentProduct.libelle : newProduct.libelle}
-                      onChange={handleFormChange}
-                      required
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="date">Date d'expiration</Label>
-                    <Input
-                    type="date"
-                      id="libelle"
-                      name="date"
-                      placeholder="date"
-                      value={currentProduct ? currentProduct.date : newProduct.date}
-                      onChange={handleFormChange}
-                      required
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="categorieId">Catégorie</Label>
-                    <Select
-                      value={
-                        currentProduct ? currentProduct.categorieId.toString() : newProduct.categorieId.toString()
-                      }
-                      onValueChange={(value) =>
-                        handleFormChange({ target: { name: "categorieId", value: parseInt(value) || 0 } })
-                      }
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Sélectionner une catégorie" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {categories.map((category) => (
-                          <SelectItem key={category.id} value={category.id.toString()}>
-                            {category.intitule}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="prix">Prix (€)</Label>
-                    <Input
-                      id="prix"
-                      name="prix"
-                      type="number"
-                      min="0"
-                      step="0.01"
-                      placeholder="8.99"
-                      value={currentProduct ? currentProduct.prix : newProduct.prix}
-                      onChange={handleFormChange}
-                      required
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="boutiqueId">Boutique</Label>
-                    <Select
-                      value={
-                        currentProduct ? currentProduct.boutiqueId.toString() : newProduct.boutiqueId.toString()
-                      }
-                      onValueChange={(value) =>
-                        handleFormChange({ target: { name: "boutiqueId", value: parseInt(value) || 0 } })
-                      }
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Sélectionner une boutique" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {shops.map((shop) => (
-                          <SelectItem key={shop.id} value={shop.id.toString()}>
-                            {shop.nom}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="quantite">Quantité</Label>
-                    <Input
-                      id="quantite"
-                      name="quantite"
-                      type="number"
-                      min="0"
-                      placeholder="0"
-                      value={currentProduct ? currentProduct.quantite : newProduct.quantite}
-                      onChange={handleFormChange}
-                      required
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="codeQr">Code QR</Label>
-                    <Input
-                      id="codeQr"
-                      name="codeQr"
-                      placeholder="Code QR"
-                      value={currentProduct ? currentProduct.codeQr : newProduct.codeQr}
-                      onChange={handleFormChange}
-                    />
-                  </div>
-                  {/* <div className="space-y-2">
-                    <Label htmlFor="acteurId">ID Acteur</Label>
-                    <Input
-                      id="acteurId"
-                      name="acteurId"
-                      type="number"
-                      min="0"
-                      placeholder="0"
-                      value={currentProduct ? currentProduct.acteurId : newProduct.acteurId}
-                      onChange={handleFormChange}
-                    />
-                  </div> */}
-                  <div className="space-y-2">
-                    <Label htmlFor="imagePath">Image</Label>
-                    <Input
-                      id="imagePath"
-                      name="imagePath"
-                      type="file"
-                      accept="image/*"
-                      onChange={handleImageChange}
-                    />
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="description">Description</Label>
-                  <Textarea
-                    id="description"
-                    name="description"
-                    placeholder="Description du produit"
-                    value={currentProduct ? currentProduct.description : newProduct.description}
-                    onChange={handleFormChange}
-                    required
-                  />
-                </div>
-                <div className="flex justify-end gap-2 pt-4">
-                  <Button type="button" variant="outline" onClick={() => setIsEditing(false)}>
-                    Annuler
-                  </Button>
-                  <Button
-                    type="button"
-                    className="flex items-center gap-2"
-                    onClick={currentProduct ? handleEditProduct : handleAddProduct}
-                  >
-                    <Save size={16} />
-                    {currentProduct ? "Mettre à jour" : "Ajouter"}
-                  </Button>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      )}
+      <Dialog open={isEditProductOpen} onOpenChange={setIsEditProductOpen}>
+        {currentProduct && (
+          <EditProductForm
+            onClose={() => setIsEditProductOpen(false)}
+            onEdit={handleEditSuccess}
+            categories={categories}
+            shops={shops}
+            currentProduct={currentProduct}
+            setCurrentProduct={setCurrentProduct}
+          />
+        )}
+      </Dialog>
     </div>
   );
 };

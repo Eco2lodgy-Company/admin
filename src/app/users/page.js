@@ -150,17 +150,27 @@ export default function UserManagement() {
 
   // Add new user
   const handleAddUser = async() => {
-    const token = localStorage.getItem("token");  
+    const token = localStorage.getItem("token"); 
+    const formData = new FormData();
+    formData.append('email', newUser.email);
+    formData.append('nom', newUser.nom);
+    formData.append('prenom', newUser.prenom);
+    formData.append('telephone', newUser.telephone);
+    formData.append('addresse', newUser.addresse);
+    formData.append('role', newUser.role);
+    formData.append('password', newUser.password);
+    formData.append('confirmPassword', newUser.confirmPassword);
+
   
     try {
       const response = await fetch(`http://195.35.24.128:8081/api/user/new`,{
         method: "POST",
         
         headers: {
-           "Content-Type": "application/json" ,
+          //  "Content-Type": "multipart/form-data" ,
            Authorization: `Bearer ${token}`
           },
-          body:JSON.stringify(newUser)
+          body:formData
       });
       
       if (!response.ok) {

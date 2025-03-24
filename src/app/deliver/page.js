@@ -1,14 +1,13 @@
-"use client"
-import React, { useState, useEffect } from 'react';
-import { mockUsers, mockOrders } from '@/data/mockData';
-import { 
-  Card, 
-  CardContent, 
-  CardHeader, 
+"use client";
+import React, { useState, useEffect } from "react";
+import {
+  Card,
+  CardContent,
+  CardHeader,
   CardTitle,
   CardDescription,
-  CardFooter
-} from '@/components/ui/card';
+  CardFooter,
+} from "@/components/ui/card";
 import {
   Tabs,
   TabsContent,
@@ -40,13 +39,20 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
-import { Label } from '@/components/ui/label';
-import { 
-  Search, 
-  MoreVertical, 
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
+import { Label } from "@/components/ui/label";
+import {
+  Search,
+  MoreVertical,
   UserCircle,
   Mail,
   Phone,
@@ -58,27 +64,16 @@ import {
   AlertTriangle,
   Plus,
   Edit,
-  Trash
-} from 'lucide-react';
-import { toast } from 'sonner';
-
-// Filter out only deliverers
-const deliverers = mockUsers.filter(user => user.role === 'deliverer');
-
-// Combine order data with user data for deliverer assignments
-const deliveryData = mockOrders.map(order => {
-  const deliverer = order.deliver_id ? mockUsers.find(user => user.id === order.deliver_id) : null;
-  return {
-    ...order,
-    deliverer: deliverer ? `${deliverer.first_name} ${deliverer.last_name}` : 'Non assigné',
-    delivererDetails: deliverer
-  };
-});
+  Trash,
+} from "lucide-react";
+import { toast } from "sonner";
 
 export default function DeliveryManagement() {
-  const [searchQuery, setSearchQuery] = useState('');
-  const [filteredDeliverers, setFilteredDeliverers] = useState(deliverers);
-  const [filteredOrders, setFilteredOrders] = useState(deliveryData);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [deliverers, setDeliverers] = useState([]);
+  const [filteredDeliverers, setFilteredDeliverers] = useState([]);
+  const [orders, setOrders] = useState([]); // À remplir si vous avez une API pour les commandes
+  const [filteredOrders, setFilteredOrders] = useState([]);
   const [selectedDeliverer, setSelectedDeliverer] = useState(null);
   const [showDelivererDetails, setShowDelivererDetails] = useState(false);
   const [activeTab, setActiveTab] = useState("deliverers");
@@ -86,113 +81,222 @@ export default function DeliveryManagement() {
   const [showEditDeliverer, setShowEditDeliverer] = useState(false);
   const [showDeleteDeliverer, setShowDeleteDeliverer] = useState(false);
   const [newDeliverer, setNewDeliverer] = useState({
-    first_name: '',
-    last_name: '',
-    email: '',
-    tel: '',
-    address: ''
+    livreurUserId: "",
+    moyenDeplacement: "",
   });
 
-  // Statistics
-  const pendingOrders = deliveryData.filter(order => order.status === 'pending').length;
-  const inProgressOrders = deliveryData.filter(order => order.status === 'in_progress').length;
-  const deliveredOrders = deliveryData.filter(order => order.status === 'delivered').length;
+  // Charger les livreurs depuis l'API
+  useEffect(() => {
+    const username = localStorage.getItem("username");
+    const token = localStorage.getItem("token");
 
-  // Handle search for deliverers
+    const fetchDeliverers = async () => {
+      try {
+        const response = await fetch(
+          `http://195.35.24.128:8081/api/livreurs/liste?username=${username}`,
+          {
+            method: "GET",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+        if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
+        const data = await response.json();
+        const delivererList = data.data || [];
+        setDeliverers(delivererList);
+        setFilteredDeliverers(delivererList);
+        toast.success("Livreurs chargés avec succès");
+      } catch (err) {
+        console.error("Error fetching deliverers:", err.message);
+        toast.error("Erreur lors de la récupération des livreurs");
+      }
+    };
+
+    fetchDeliverers();
+  }, []);
+
+  // Filtrer les livreurs
   const handleSearchDeliverers = (e) => {
     const query = e.target.value.toLowerCase();
     setSearchQuery(query);
-    
-    const filtered = deliverers.filter(deliverer => 
-      deliverer.first_name.toLowerCase().includes(query) || 
-      deliverer.last_name.toLowerCase().includes(query) || 
-      deliverer.email.toLowerCase().includes(query)
+    const filtered = deliverers.filter(
+      (deliverer) =>
+        deliverer.prenom.toLowerCase().includes(query) ||
+        deliverer.nom.toLowerCase().includes(query) ||
+        deliverer.email.toLowerCase().includes(query)
     );
-    
     setFilteredDeliverers(filtered);
   };
 
-  // Handle search for orders
+  // Filtrer les commandes (à implémenter si vous avez une API pour les commandes)
   const handleSearchOrders = (e) => {
     const query = e.target.value.toLowerCase();
     setSearchQuery(query);
-    
-    const filtered = deliveryData.filter(order => 
-      order.deliverer.toLowerCase().includes(query) || 
-      order.status.toLowerCase().includes(query) || 
-      order.delivery_address.toLowerCase().includes(query) ||
-      order.id.toString().includes(query)
+    const filtered = orders.filter(
+      (order) =>
+        order.id.toString().includes(query) ||
+        (order.deliverer && order.deliverer.toLowerCase().includes(query)) ||
+        order.delivery_address.toLowerCase().includes(query)
     );
-    
     setFilteredOrders(filtered);
   };
 
-  // Handle adding new deliverer
-  const handleAddDeliverer = () => {
-    // Here you would typically make an API call to add the deliverer
-    toast.success('Nouveau livreur ajouté avec succès !');
-    setShowAddDeliverer(false);
-    setNewDeliverer({
-      first_name: '',
-      last_name: '',
-      email: '',
-      tel: '',
-      address: ''
-    });
-  };
+  // Ajouter un livreur
+  const handleAddDeliverer = async () => {
+    const token = localStorage.getItem("token");
+    const acteurId = localStorage.getItem("acteurId"); // Récupéré depuis localStorage
 
-  // Handle editing deliverer
-  const handleEditDeliverer = () => {
-    // Here you would typically make an API call to update the deliverer
-    toast.success('Livreur modifié avec succès !');
-    setShowEditDeliverer(false);
-  };
-
-  // Handle deleting deliverer
-  const handleDeleteDeliverer = () => {
-    // Here you would typically make an API call to delete the deliverer
-    toast.success('Livreur supprimé avec succès !');
-    setShowDeleteDeliverer(false);
-  };
-
-  // Reset search when changing tabs
-  useEffect(() => {
-    const fechtDeliverer = async() => {
-      const res = await fetch('http://localhost:8000/deliverer')
-
-      if (!res.ok) {
-        throw new Error(`HTTP error! Status: ${response.status}`);
-      }
-      const data = await res.json();
-      setFilteredDeliverers(data)
-    // setFilteredOrders(data);
-
+    if (!newDeliverer.livreurUserId || !newDeliverer.moyenDeplacement) {
+      toast.error("Veuillez remplir tous les champs obligatoires");
+      return;
     }
-    setSearchQuery('');
-    // setFilteredDeliverers(deliverers);
-    fechtDeliverer()
-    setFilteredOrders(deliveryData);
-  }, [activeTab]);
 
-  // Get status badge style
+    const delivererData = {
+      livreurUserId: parseInt(newDeliverer.livreurUserId),
+      acteurId: parseInt(acteurId),
+      moyenDeplacement: newDeliverer.moyenDeplacement,
+    };
+
+    try {
+      const response = await fetch(`http://195.35.24.128:8081/api/livreurs/new`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(delivererData),
+      });
+
+      if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
+      const data = await response.json();
+      const newDelivererData = data.data;
+      setDeliverers([...deliverers, newDelivererData]);
+      setFilteredDeliverers([...filteredDeliverers, newDelivererData]);
+      setNewDeliverer({ livreurUserId: "", moyenDeplacement: "" });
+      setShowAddDeliverer(false);
+      toast.success("Livreur ajouté avec succès");
+    } catch (err) {
+      console.error("Error adding deliverer:", err.message);
+      toast.error("Erreur lors de l'ajout du livreur");
+    }
+  };
+
+  // Modifier un livreur
+  const handleEditDeliverer = async () => {
+    const token = localStorage.getItem("token");
+    const acteurId = localStorage.getItem("acteurId");
+
+    if (!selectedDeliverer.livreurUserId || !selectedDeliverer.moyenDeplacement) {
+      toast.error("Veuillez remplir tous les champs obligatoires");
+      return;
+    }
+
+    const delivererData = {
+      livreurUserId: parseInt(selectedDeliverer.livreurUserId),
+      acteurId: parseInt(acteurId),
+      moyenDeplacement: selectedDeliverer.moyenDeplacement,
+    };
+
+    try {
+      const response = await fetch(
+        `http://195.35.24.128:8081/api/deliverers/update/${selectedDeliverer.id}`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify(delivererData),
+        }
+      );
+
+      if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
+      const data = await response.json();
+      const updatedDeliverer = data.data;
+      setDeliverers(
+        deliverers.map((d) => (d.id === updatedDeliverer.id ? updatedDeliverer : d))
+      );
+      setFilteredDeliverers(
+        filteredDeliverers.map((d) => (d.id === updatedDeliverer.id ? updatedDeliverer : d))
+      );
+      setShowEditDeliverer(false);
+      toast.success("Livreur modifié avec succès");
+    } catch (err) {
+      console.error("Error updating deliverer:", err.message);
+      toast.error("Erreur lors de la modification du livreur");
+    }
+  };
+
+  // Supprimer un livreur (non demandé mais laissé pour cohérence)
+  const handleDeleteDeliverer = async () => {
+    const token = localStorage.getItem("token");
+
+    try {
+      const response = await fetch(
+        `http://195.35.24.128:8081/api/deliverers/delete/${selectedDeliverer.id}`,
+        {
+          method: "DELETE",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
+      setDeliverers(deliverers.filter((d) => d.id !== selectedDeliverer.id));
+      setFilteredDeliverers(filteredDeliverers.filter((d) => d.id !== selectedDeliverer.id));
+      setShowDeleteDeliverer(false);
+      toast.success("Livreur supprimé avec succès");
+    } catch (err) {
+      console.error("Error deleting deliverer:", err.message);
+      toast.error("Erreur lors de la suppression du livreur");
+    }
+  };
+
+  // Réinitialiser la recherche lors du changement d'onglet
+  useEffect(() => {
+    setSearchQuery("");
+    setFilteredDeliverers(deliverers);
+    setFilteredOrders(orders);
+  }, [activeTab, deliverers, orders]);
+
+  // Badge de statut pour les commandes
   const getStatusBadge = (status) => {
     switch (status) {
-      case 'pending':
-        return <Badge variant="outline" className="bg-yellow-100 text-yellow-800 hover:bg-yellow-100">En attente</Badge>;
-      case 'in_progress':
-        return <Badge variant="outline" className="bg-blue-100 text-blue-800 hover:bg-blue-100">En cours</Badge>;
-      case 'delivered':
-        return <Badge variant="outline" className="bg-green-100 text-green-800 hover:bg-green-100">Livré</Badge>;
+      case "pending":
+        return (
+          <Badge variant="outline" className="bg-yellow-100 text-yellow-800 hover:bg-yellow-100">
+            En attente
+          </Badge>
+        );
+      case "in_progress":
+        return (
+          <Badge variant="outline" className="bg-blue-100 text-blue-800 hover:bg-blue-100">
+            En cours
+          </Badge>
+        );
+      case "delivered":
+        return (
+          <Badge variant="outline" className="bg-green-100 text-green-800 hover:bg-green-100">
+            Livré
+          </Badge>
+        );
       default:
-        return <Badge variant="outline" className="bg-gray-100 text-gray-800 hover:bg-gray-100">{status}</Badge>;
+        return (
+          <Badge variant="outline" className="bg-gray-100 text-gray-800 hover:bg-gray-100">
+            {status}
+          </Badge>
+        );
     }
   };
 
-  // Format currency
+  // Formatter la devise (pour les commandes, si applicable)
   const formatCurrency = (amount) => {
-    return new Intl.NumberFormat('fr-FR', {
-      style: 'currency',
-      currency: 'EUR'
+    return new Intl.NumberFormat("fr-FR", {
+      style: "currency",
+      currency: "EUR",
     }).format(amount);
   };
 
@@ -203,14 +307,16 @@ export default function DeliveryManagement() {
         <p className="text-gray-500 mt-1">Gérez les livreurs et les commandes en cours</p>
       </div>
 
-      {/* Quick Stats */}
+      {/* Statistiques */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <Card className="bg-yellow-50 border-yellow-200">
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-yellow-800">En attente</p>
-                <h3 className="text-2xl font-bold text-yellow-900 mt-1">{pendingOrders}</h3>
+                <h3 className="text-2xl font-bold text-yellow-900 mt-1">
+                  {orders.filter((order) => order.status === "pending").length}
+                </h3>
               </div>
               <div className="h-12 w-12 bg-yellow-200 rounded-full flex items-center justify-center text-yellow-700">
                 <Clock className="h-6 w-6" />
@@ -223,7 +329,9 @@ export default function DeliveryManagement() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-blue-800">En cours</p>
-                <h3 className="text-2xl font-bold text-blue-900 mt-1">{inProgressOrders}</h3>
+                <h3 className="text-2xl font-bold text-blue-900 mt-1">
+                  {orders.filter((order) => order.status === "in_progress").length}
+                </h3>
               </div>
               <div className="h-12 w-12 bg-blue-200 rounded-full flex items-center justify-center text-blue-700">
                 <LocateFixed className="h-6 w-6" />
@@ -236,7 +344,9 @@ export default function DeliveryManagement() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-green-800">Livrées</p>
-                <h3 className="text-2xl font-bold text-green-900 mt-1">{deliveredOrders}</h3>
+                <h3 className="text-2xl font-bold text-green-900 mt-1">
+                  {orders.filter((order) => order.status === "delivered").length}
+                </h3>
               </div>
               <div className="h-12 w-12 bg-green-200 rounded-full flex items-center justify-center text-green-700">
                 <CheckCircle className="h-6 w-6" />
@@ -246,14 +356,14 @@ export default function DeliveryManagement() {
         </Card>
       </div>
 
-      {/* Tabs for Deliverers and Orders */}
+      {/* Onglets */}
       <Tabs defaultValue="deliverers" className="space-y-4" onValueChange={setActiveTab}>
         <TabsList className="grid w-full grid-cols-2">
           <TabsTrigger value="deliverers">Livreurs</TabsTrigger>
           <TabsTrigger value="orders">Commandes</TabsTrigger>
         </TabsList>
-        
-        {/* Deliverers Tab */}
+
+        {/* Onglet Livreurs */}
         <TabsContent value="deliverers" className="space-y-4">
           <Card>
             <CardHeader className="pb-2">
@@ -261,16 +371,16 @@ export default function DeliveryManagement() {
                 <div>
                   <CardTitle className="text-lg">Liste des livreurs</CardTitle>
                   <CardDescription>
-                    {filteredDeliverers.length} livreur{filteredDeliverers.length !== 1 ? 's' : ''}
+                    {filteredDeliverers.length} livreur{filteredDeliverers.length !== 1 ? "s" : ""}
                   </CardDescription>
                 </div>
                 <div className="flex items-center gap-4">
                   <div className="relative">
                     <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
-                    <Input 
-                      type="search" 
-                      placeholder="Rechercher un livreur..." 
-                      className="pl-8 w-full sm:w-[260px]" 
+                    <Input
+                      type="search"
+                      placeholder="Rechercher un livreur..."
+                      className="pl-8 w-full sm:w-[260px]"
                       value={searchQuery}
                       onChange={handleSearchDeliverers}
                     />
@@ -286,67 +396,56 @@ export default function DeliveryManagement() {
                       <DialogHeader>
                         <DialogTitle>Ajouter un nouveau livreur</DialogTitle>
                         <DialogDescription>
-                          Remplissez les informations du nouveau livreur ci-dessous.
+                          Sélectionnez un utilisateur avec le rôle "Livreur" et son moyen de déplacement.
                         </DialogDescription>
                       </DialogHeader>
                       <div className="grid gap-4 py-4">
-                        <div className="grid grid-cols-2 gap-4">
-                          <div className="flex flex-col gap-2">
-                            <Label htmlFor="first_name">Prénom</Label>
-                            <Input
-                              id="first_name"
-                              value={newDeliverer.first_name}
-                              onChange={(e) => setNewDeliverer({...newDeliverer, first_name: e.target.value})}
-                              placeholder="Jean"
-                            />
-                          </div>
-                          <div className="flex flex-col gap-2">
-                            <Label htmlFor="last_name">Nom</Label>
-                            <Input
-                              id="last_name"
-                              value={newDeliverer.last_name}
-                              onChange={(e) => setNewDeliverer({...newDeliverer, last_name: e.target.value})}
-                              placeholder="Dupont"
-                            />
-                          </div>
+                        <div className="flex flex-col gap-2">
+                          <Label htmlFor="livreurUserId">Livreur</Label>
+                          <Select
+                            value={newDeliverer.livreurUserId}
+                            onValueChange={(value) =>
+                              setNewDeliverer({ ...newDeliverer, livreurUserId: value })
+                            }
+                          >
+                            <SelectTrigger className="w-full">
+                              <SelectValue placeholder="Sélectionner un livreur" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {deliverers
+                                .filter((d) => d.role === "Livreur")
+                                .map((deliverer) => (
+                                  <SelectItem key={deliverer.id} value={deliverer.id.toString()}>
+                                    {deliverer.prenom} {deliverer.nom} ({deliverer.email})
+                                  </SelectItem>
+                                ))}
+                            </SelectContent>
+                          </Select>
                         </div>
                         <div className="flex flex-col gap-2">
-                          <Label htmlFor="email">Email</Label>
-                          <Input
-                            id="email"
-                            type="email"
-                            value={newDeliverer.email}
-                            onChange={(e) => setNewDeliverer({...newDeliverer, email: e.target.value})}
-                            placeholder="jean.dupont@example.com"
-                          />
-                        </div>
-                        <div className="flex flex-col gap-2">
-                          <Label htmlFor="tel">Téléphone</Label>
-                          <Input
-                            id="tel"
-                            type="tel"
-                            value={newDeliverer.tel}
-                            onChange={(e) => setNewDeliverer({...newDeliverer, tel: e.target.value})}
-                            placeholder="06 12 34 56 78"
-                          />
-                        </div>
-                        <div className="flex flex-col gap-2">
-                          <Label htmlFor="address">Adresse</Label>
-                          <Input
-                            id="address"
-                            value={newDeliverer.address}
-                            onChange={(e) => setNewDeliverer({...newDeliverer, address: e.target.value})}
-                            placeholder="123 rue de la Livraison"
-                          />
+                          <Label htmlFor="moyenDeplacement">Moyen de déplacement</Label>
+                          <Select
+                            value={newDeliverer.moyenDeplacement}
+                            onValueChange={(value) =>
+                              setNewDeliverer({ ...newDeliverer, moyenDeplacement: value })
+                            }
+                          >
+                            <SelectTrigger className="w-full">
+                              <SelectValue placeholder="Sélectionner un moyen" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="Moto">Moto</SelectItem>
+                              <SelectItem value="Voiture">Voiture</SelectItem>
+                              <SelectItem value="Vélo">Vélo</SelectItem>
+                            </SelectContent>
+                          </Select>
                         </div>
                       </div>
                       <DialogFooter>
                         <Button variant="outline" onClick={() => setShowAddDeliverer(false)}>
                           Annuler
                         </Button>
-                        <Button onClick={handleAddDeliverer}>
-                          Ajouter le livreur
-                        </Button>
+                        <Button onClick={handleAddDeliverer}>Ajouter le livreur</Button>
                       </DialogFooter>
                     </DialogContent>
                   </Dialog>
@@ -362,6 +461,7 @@ export default function DeliveryManagement() {
                       <TableHead>Email</TableHead>
                       <TableHead>Téléphone</TableHead>
                       <TableHead>Adresse</TableHead>
+                      <TableHead>Moyen de déplacement</TableHead>
                       <TableHead className="text-right">Actions</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -370,13 +470,14 @@ export default function DeliveryManagement() {
                       filteredDeliverers.map((deliverer) => (
                         <TableRow key={deliverer.id}>
                           <TableCell className="font-medium">
-                            {deliverer.first_name} {deliverer.last_name}
+                            {deliverer.prenom} {deliverer.nom}
                           </TableCell>
                           <TableCell>{deliverer.email}</TableCell>
-                          <TableCell>{deliverer.tel || "-"}</TableCell>
+                          <TableCell>{deliverer.telephone || "-"}</TableCell>
                           <TableCell className="max-w-[200px] truncate">
-                            {deliverer.address || "-"}
+                            {deliverer.adresse || "-"}
                           </TableCell>
+                          <TableCell>{deliverer.moyenDeplacement || "-"}</TableCell>
                           <TableCell className="text-right">
                             <DropdownMenu>
                               <DropdownMenuTrigger asChild>
@@ -399,7 +500,10 @@ export default function DeliveryManagement() {
                                 </DropdownMenuItem>
                                 <DropdownMenuItem
                                   onClick={() => {
-                                    setSelectedDeliverer(deliverer);
+                                    setSelectedDeliverer({
+                                      ...deliverer,
+                                      livreurUserId: deliverer.id.toString(),
+                                    });
                                     setShowEditDeliverer(true);
                                   }}
                                 >
@@ -422,7 +526,7 @@ export default function DeliveryManagement() {
                       ))
                     ) : (
                       <TableRow>
-                        <TableCell colSpan={5} className="h-24 text-center">
+                        <TableCell colSpan={6} className="h-24 text-center">
                           Aucun livreur trouvé.
                         </TableCell>
                       </TableRow>
@@ -433,8 +537,8 @@ export default function DeliveryManagement() {
             </CardContent>
           </Card>
         </TabsContent>
-        
-        {/* Orders Tab */}
+
+        {/* Onglet Commandes */}
         <TabsContent value="orders" className="space-y-4">
           <Card>
             <CardHeader className="pb-2">
@@ -442,15 +546,15 @@ export default function DeliveryManagement() {
                 <div>
                   <CardTitle className="text-lg">Commandes en livraison</CardTitle>
                   <CardDescription>
-                    {filteredOrders.length} commande{filteredOrders.length !== 1 ? 's' : ''}
+                    {filteredOrders.length} commande{filteredOrders.length !== 1 ? "s" : ""}
                   </CardDescription>
                 </div>
                 <div className="relative">
                   <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
-                  <Input 
-                    type="search" 
-                    placeholder="Rechercher une commande..." 
-                    className="pl-8 w-full sm:w-[260px]" 
+                  <Input
+                    type="search"
+                    placeholder="Rechercher une commande..."
+                    className="pl-8 w-full sm:w-[260px]"
                     value={searchQuery}
                     onChange={handleSearchOrders}
                   />
@@ -475,11 +579,7 @@ export default function DeliveryManagement() {
                       filteredOrders.map((order) => (
                         <TableRow key={order.id}>
                           <TableCell className="font-medium">#{order.id}</TableCell>
-                          <TableCell>
-                            {order.deliver_id ? order.deliverer : (
-                              <Badge variant="outline" className="bg-gray-100 text-gray-800 hover:bg-gray-100">Non assigné</Badge>
-                            )}
-                          </TableCell>
+                          <TableCell>{order.deliverer || "Non assigné"}</TableCell>
                           <TableCell>{getStatusBadge(order.status)}</TableCell>
                           <TableCell className="max-w-[200px] truncate">
                             {order.delivery_address}
@@ -504,37 +604,6 @@ export default function DeliveryManagement() {
                                   <Package2 className="mr-2 h-4 w-4" />
                                   Voir les détails
                                 </DropdownMenuItem>
-                                {order.status === 'pending' && (
-                                  <DropdownMenuItem
-                                    onClick={() => {
-                                      toast.success(`Livreur assigné à la commande #${order.id}`);
-                                    }}
-                                  >
-                                    <UserCircle className="mr-2 h-4 w-4" />
-                                    Assigner un livreur
-                                  </DropdownMenuItem>
-                                )}
-                                {order.status === 'in_progress' && (
-                                  <DropdownMenuItem
-                                    onClick={() => {
-                                      toast.success(`La commande #${order.id} a été marquée comme livrée`);
-                                    }}
-                                  >
-                                    <CheckCircle className="mr-2 h-4 w-4" />
-                                    Marquer comme livrée
-                                  </DropdownMenuItem>
-                                )}
-                                {order.status !== 'delivered' && (
-                                  <DropdownMenuItem
-                                    onClick={() => {
-                                      toast.error(`La commande #${order.id} a été signalée comme problématique`);
-                                    }}
-                                    className="text-red-600"
-                                  >
-                                    <AlertTriangle className="mr-2 h-4 w-4" />
-                                    Signaler un problème
-                                  </DropdownMenuItem>
-                                )}
                               </DropdownMenuContent>
                             </DropdownMenu>
                           </TableCell>
@@ -551,22 +620,16 @@ export default function DeliveryManagement() {
                 </Table>
               </div>
             </CardContent>
-            <CardFooter className="flex justify-between border-t pt-6">
-              {/* <Button variant="outline">Exporter les commandes</Button> */}
-              {/* <Button>Assigner les commandes en attente</Button> */}
-            </CardFooter>
           </Card>
         </TabsContent>
       </Tabs>
 
-      {/* Deliverer Details Dialog */}
+      {/* Dialog Détails Livreur */}
       <Dialog open={showDelivererDetails} onOpenChange={setShowDelivererDetails}>
         <DialogContent className="sm:max-w-[550px]">
           <DialogHeader>
             <DialogTitle>Détails du livreur</DialogTitle>
-            <DialogDescription>
-              Informations complètes sur le livreur
-            </DialogDescription>
+            <DialogDescription>Informations complètes sur le livreur</DialogDescription>
           </DialogHeader>
           {selectedDeliverer && (
             <div className="py-4">
@@ -576,68 +639,37 @@ export default function DeliveryManagement() {
                     <UserCircle className="h-8 w-8" />
                   </div>
                   <div>
-                    <p className="text-xl font-semibold">{selectedDeliverer.first_name} {selectedDeliverer.last_name}</p>
+                    <p className="text-xl font-semibold">
+                      {selectedDeliverer.prenom} {selectedDeliverer.nom}
+                    </p>
                     <div className="flex items-center text-sm text-gray-500 mt-1">
                       <Mail className="h-4 w-4 mr-1" />
                       {selectedDeliverer.email}
                     </div>
                   </div>
                 </div>
-                
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2">
                   <div className="p-4 bg-blue-50 rounded-lg">
                     <h4 className="font-medium text-blue-900 mb-2">Coordonnées</h4>
                     <div className="space-y-2">
                       <div className="flex items-center text-sm">
                         <Phone className="h-4 w-4 mr-2 text-blue-600" />
-                        <span>{selectedDeliverer.tel || "Non renseigné"}</span>
+                        <span>{selectedDeliverer.telephone || "Non renseigné"}</span>
                       </div>
                       <div className="flex items-start text-sm">
                         <MapPin className="h-4 w-4 mr-2 text-blue-600 mt-0.5" />
-                        <span>{selectedDeliverer.address || "Non renseigné"}</span>
+                        <span>{selectedDeliverer.adresse || "Non renseigné"}</span>
                       </div>
                     </div>
                   </div>
-                  
                   <div className="p-4 bg-green-50 rounded-lg">
-                    <h4 className="font-medium text-green-900 mb-2">Statistiques</h4>
+                    <h4 className="font-medium text-green-900 mb-2">Moyen de déplacement</h4>
                     <div className="space-y-2">
-                      <div className="flex items-center justify-between text-sm">
-                        <span>Commandes livrées:</span>
-                        <span className="font-medium">24</span>
-                      </div>
-                      <div className="flex items-center justify-between text-sm">
-                        <span>Taux de satisfaction:</span>
-                        <span className="font-medium">97%</span>
-                      </div>
-                      <div className="flex items-center justify-between text-sm">
-                        <span>Temps moyen:</span>
-                        <span className="font-medium">28 min</span>
+                      <div className="flex items-center text-sm">
+                        <span>{selectedDeliverer.moyenDeplacement || "Non défini"}</span>
                       </div>
                     </div>
                   </div>
-                </div>
-                
-                <div className="p-4 bg-gray-50 rounded-lg">
-                  <h4 className="font-medium mb-2">Commandes en cours</h4>
-                  {deliveryData.filter(order => order.deliver_id === selectedDeliverer.id && order.status !== 'delivered').length > 0 ? (
-                    <div className="space-y-2">
-                      {deliveryData
-                        .filter(order => order.deliver_id === selectedDeliverer.id && order.status !== 'delivered')
-                        .map(order => (
-                          <div key={order.id} className="flex items-center justify-between text-sm p-2 bg-white rounded border">
-                            <div className="flex items-center">
-                              <Package2 className="h-4 w-4 mr-2 text-gray-500" />
-                              <span>Commande #{order.id}</span>
-                            </div>
-                            {getStatusBadge(order.status)}
-                          </div>
-                        ))
-                      }
-                    </div>
-                  ) : (
-                    <p className="text-sm text-gray-500">Aucune commande en cours</p>
-                  )}
                 </div>
               </div>
             </div>
@@ -646,75 +678,58 @@ export default function DeliveryManagement() {
             <Button variant="outline" onClick={() => setShowDelivererDetails(false)}>
               Fermer
             </Button>
-            <Button onClick={() => {
-              toast.success(`Un message a été envoyé à ${selectedDeliverer?.first_name} ${selectedDeliverer?.last_name}`);
-              setShowDelivererDetails(false);
-            }}>
-              Contacter
-            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
-      {/* Edit Deliverer Dialog */}
+      {/* Dialog Modifier Livreur */}
       <Dialog open={showEditDeliverer} onOpenChange={setShowEditDeliverer}>
         <DialogContent className="sm:max-w-[500px]">
           <DialogHeader>
             <DialogTitle>Modifier le livreur</DialogTitle>
-            <DialogDescription>
-              Modifiez les informations du livreur ci-dessous.
-            </DialogDescription>
+            <DialogDescription>Modifiez les informations du livreur ci-dessous.</DialogDescription>
           </DialogHeader>
           {selectedDeliverer && (
             <div className="grid gap-4 py-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="flex flex-col gap-2">
-                  <Label htmlFor="first_name">Prénom</Label>
-                  <Input
-                    id="first_name"
-                    value={selectedDeliverer.first_name}
-                    onChange={(e) => setSelectedDeliverer({...selectedDeliverer, first_name: e.target.value})}
-                    placeholder="Jean"
-                  />
-                </div>
-                <div className="flex flex-col gap-2">
-                  <Label htmlFor="last_name">Nom</Label>
-                  <Input
-                    id="last_name"
-                    value={selectedDeliverer.last_name}
-                    onChange={(e) => setSelectedDeliverer({...selectedDeliverer, last_name: e.target.value})}
-                    placeholder="Dupont"
-                  />
-                </div>
+              <div className="flex flex-col gap-2">
+                <Label htmlFor="livreurUserId">Livreur</Label>
+                <Select
+                  value={selectedDeliverer.livreurUserId}
+                  onValueChange={(value) =>
+                    setSelectedDeliverer({ ...selectedDeliverer, livreurUserId: value })
+                  }
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Sélectionner un livreur" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {deliverers
+                      .filter((d) => d.role === "Livreur")
+                      .map((deliverer) => (
+                        <SelectItem key={deliverer.id} value={deliverer.id.toString()}>
+                          {deliverer.prenom} {deliverer.nom} ({deliverer.email})
+                        </SelectItem>
+                      ))}
+                  </SelectContent>
+                </Select>
               </div>
               <div className="flex flex-col gap-2">
-                <Label htmlFor="email">Email</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  value={selectedDeliverer.email}
-                  onChange={(e) => setSelectedDeliverer({...selectedDeliverer, email: e.target.value})}
-                  placeholder="jean.dupont@example.com"
-                />
-              </div>
-              <div className="flex flex-col gap-2">
-                <Label htmlFor="tel">Téléphone</Label>
-                <Input
-                  id="tel"
-                  type="tel"
-                  value={selectedDeliverer.tel}
-                  onChange={(e) => setSelectedDeliverer({...selectedDeliverer, tel: e.target.value})}
-                  placeholder="06 12 34 56 78"
-                />
-              </div>
-              <div className="flex flex-col gap-2">
-                <Label htmlFor="address">Adresse</Label>
-                <Input
-                  id="address"
-                  value={selectedDeliverer.address}
-                  onChange={(e) => setSelectedDeliverer({...selectedDeliverer, address: e.target.value})}
-                  placeholder="123 rue de la Livraison"
-                />
+                <Label htmlFor="moyenDeplacement">Moyen de déplacement</Label>
+                <Select
+                  value={selectedDeliverer.moyenDeplacement}
+                  onValueChange={(value) =>
+                    setSelectedDeliverer({ ...selectedDeliverer, moyenDeplacement: value })
+                  }
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Sélectionner un moyen" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Moto">Moto</SelectItem>
+                    <SelectItem value="Voiture">Voiture</SelectItem>
+                    <SelectItem value="Vélo">Vélo</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
             </div>
           )}
@@ -722,14 +737,12 @@ export default function DeliveryManagement() {
             <Button variant="outline" onClick={() => setShowEditDeliverer(false)}>
               Annuler
             </Button>
-            <Button onClick={handleEditDeliverer}>
-              Enregistrer les modifications
-            </Button>
+            <Button onClick={handleEditDeliverer}>Enregistrer les modifications</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
-      {/* Delete Deliverer Dialog */}
+      {/* Dialog Supprimer Livreur */}
       <Dialog open={showDeleteDeliverer} onOpenChange={setShowDeleteDeliverer}>
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
