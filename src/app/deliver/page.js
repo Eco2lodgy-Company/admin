@@ -71,6 +71,7 @@ import { toast } from "sonner";
 export default function DeliveryManagement() {
   const [searchQuery, setSearchQuery] = useState("");
   const [deliverers, setDeliverers] = useState([]);
+  const [users, setUsers] = useState([]);
   const [filteredDeliverers, setFilteredDeliverers] = useState([]);
   const [orders, setOrders] = useState([]); // À remplir si vous avez une API pour les commandes
   const [filteredOrders, setFilteredOrders] = useState([]);
@@ -114,7 +115,33 @@ export default function DeliveryManagement() {
       }
     };
 
+    const fecthUsers = async () => {
+      try {
+        const response = await fetch(
+          `http://195.35.24.128:8081/api/user/liste?username=${username}`,
+          {
+            method: "GET",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+        if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
+        const data = await response.json();
+        const delivererList = data.data || [];
+        setUsers(delivererList);
+        console.log(delivererList);
+        // setFilteredDeliverers(delivererList);
+        toast.success("Livreurs chargés avec succès");
+      } catch (err) {
+        console.error("Error fetching users:", err.message);
+        toast.error("Erreur lors de la récupération des utilisateurs");
+      }
+    };
+
     fetchDeliverers();
+    fecthUsers();
   }, []);
 
   // Filtrer les livreurs
@@ -146,7 +173,9 @@ export default function DeliveryManagement() {
   // Ajouter un livreur
   const handleAddDeliverer = async () => {
     const token = localStorage.getItem("token");
-    const acteurId = localStorage.getItem("acteurId"); // Récupéré depuis localStorage
+    const acteurId = localStorage.getItem("logedUserId"); // Récupéré depuis localStorage
+
+   
 
     if (!newDeliverer.livreurUserId || !newDeliverer.moyenDeplacement) {
       toast.error("Veuillez remplir tous les champs obligatoires");
@@ -158,6 +187,7 @@ export default function DeliveryManagement() {
       acteurId: parseInt(acteurId),
       moyenDeplacement: newDeliverer.moyenDeplacement,
     };
+    console.log(delivererData);
 
     try {
       const response = await fetch(`http://195.35.24.128:8081/api/livreurs/new`, {
@@ -412,8 +442,9 @@ export default function DeliveryManagement() {
                               <SelectValue placeholder="Sélectionner un livreur" />
                             </SelectTrigger>
                             <SelectContent>
-                              {deliverers
-                                .filter((d) => d.role === "Livreur")
+                              {users
+                                .filter((u) => u.role === "LIVREUR")
+                                // .filter((d) => d.role === "Livreur")
                                 .map((deliverer) => (
                                   <SelectItem key={deliverer.id} value={deliverer.id.toString()}>
                                     {deliverer.prenom} {deliverer.nom} ({deliverer.email})
@@ -436,7 +467,11 @@ export default function DeliveryManagement() {
                             <SelectContent>
                               <SelectItem value="Moto">Moto</SelectItem>
                               <SelectItem value="Voiture">Voiture</SelectItem>
+                              <SelectItem value="Camion">Camion</SelectItem>
+                              <SelectItem value="Scooter">Scooter</SelectItem>
                               <SelectItem value="Vélo">Vélo</SelectItem>
+                              <SelectItem value="Trotinette">Trotinette</SelectItem>
+                              <SelectItem value="À pied">À pied</SelectItem>
                             </SelectContent>
                           </Select>
                         </div>
