@@ -44,6 +44,8 @@ import {
   Edit,
   Trash2,
   Tag,
+  CheckCircle,
+  XCircle,
 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -62,10 +64,11 @@ export default function CategoryManagement() {
   const [isAddCategoryOpen, setIsAddCategoryOpen] = useState(false);
   const [isEditCategoryOpen, setIsEditCategoryOpen] = useState(false);
   const [isDeleteCategoryOpen, setIsDeleteCategoryOpen] = useState(false);
+  const [isActivateCategoryOpen, setIsActivateCategoryOpen] = useState(false);
+  const [isDeactivateCategoryOpen, setIsDeactivateCategoryOpen] = useState(false);
   const [currentCategory, setCurrentCategory] = useState(null);
   const [shops, setShops] = useState([]);
-  // const username = localStorage.getItem("username");
-// console.log(username)
+  
   const [newCategory, setNewCategory] = useState({
     intitule: "",
     description: "",
@@ -131,7 +134,7 @@ export default function CategoryManagement() {
 
     fetchCategories();
     fetchShops();
-  }, []);
+  }, [categories]);
 
   const handleSearch = (e) => {
     const query = e.target.value.toLowerCase();
@@ -154,21 +157,19 @@ export default function CategoryManagement() {
     const token = localStorage.getItem("token");
     const username = localStorage.getItem("username");
 
-    const formData = new FormData();
-    formData.append("intitule", newCategory.intitule);
-    formData.append("description", newCategory.description);
-    formData.append("shopId", newCategory.shopId);
-    formData.append("acteurUsername", username);
+    const categoryToSend = {
+      ...newCategory,
+      acteurUsername: username,
+    };
 
     try {
       const response = await fetch(`http://195.35.24.128:8081/api/productCategories/new`, {
         method: "POST",
-        contentType: "application/json",
         headers: {
+          "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
-          
         },
-        body: JSON.stringify(formData),
+        body: JSON.stringify(categoryToSend),
       });
 
       if (!response.ok) {
@@ -183,7 +184,7 @@ export default function CategoryManagement() {
         intitule: "",
         description: "",
         shopId: 0,
-        acteurId: 0,
+        acteurUsername: "",
       });
       toast.success("Catégorie ajoutée avec succès");
     } catch (err) {
@@ -196,22 +197,23 @@ export default function CategoryManagement() {
     if (!currentCategory) return;
 
     const token = localStorage.getItem("token");
-    const formData = new FormData();
-    formData.append("id", currentCategory.id);
-    formData.append("intitule", currentCategory.intitule);
-    formData.append("description", currentCategory.description);
-    formData.append("shopId", currentCategory.shopId);
-    formData.append("acteurId", currentCategory.acteurId);
+    const username = localStorage.getItem("username");
+
+    const categoryToEdit = {
+      ...currentCategory,
+      acteurUsername: username,
+    };
 
     try {
       const response = await fetch(
-        `http://195.35.24.128:8081/api/productCategories/update`,
+        `http://195.35.24.128:8081/api/productCategories/update/${currentCategory.id}`,
         {
-          method: "POST",
+          method: "PUT",
           headers: {
+            "Content-Type": "application/json",
             Authorization: `Bearer ${token}`,
           },
-          body: formData,
+          body: JSON.stringify(categoryToEdit),
         }
       );
 
@@ -248,6 +250,7 @@ export default function CategoryManagement() {
         {
           method: "DELETE",
           headers: {
+            "Content-Type": "application/json",
             Authorization: `Bearer ${token}`,
           },
         }
@@ -272,6 +275,84 @@ export default function CategoryManagement() {
     } catch (err) {
       console.error("Error deleting category:", err.message);
       toast.error("Erreur lors de la suppression de la catégorie");
+    }
+  };
+
+  const handleActivateCategory = async () => {
+    if (!currentCategory) return;
+
+    const token = localStorage.getItem("token");
+    try {
+      const response = await fetch(
+        `http://195.35.24.128:8081/api/productCategories/api/productCategories/changeStatus/${currentCategory.id}`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! Status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      const updatedCategories = categories.map((category) =>
+        category.id === currentCategory.id ? { ...category, status: true } : category
+      );
+      setCategories(updatedCategories);
+      setFilteredCategories(
+        filteredCategories.map((category) =>
+          category.id === currentCategory.id ? { ...category, status: true } : category
+        )
+      );
+      setIsActivateCategoryOpen(false);
+      setCurrentCategory(null);
+      toast.success("Catégorie activée avec succès");
+    } catch (err) {
+      console.error("Error activating category:", err.message);
+      toast.error("Erreur lors de l'activation de la catégorie");
+    }
+  };
+
+  const handleDeactivateCategory = async () => {
+    if (!currentCategory) return;
+
+    const token = localStorage.getItem("token");
+    try {
+      const response = await fetch(
+        `http://195.35.24.128:8081/api/productCategories/api/productCategories/changeStatus/${currentCategory.id}`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! Status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      const updatedCategories = categories.map((category) =>
+        category.id === currentCategory.id ? { ...category, status: false } : category
+      );
+      setCategories(updatedCategories);
+      setFilteredCategories(
+        filteredCategories.map((category) =>
+          category.id === currentCategory.id ? { ...category, status: false } : category
+        )
+      );
+      setIsDeactivateCategoryOpen(false);
+      setCurrentCategory(null);
+      toast.success("Catégorie désactivée avec succès");
+    } catch (err) {
+      console.error("Error deactivating category:", err.message);
+      toast.error("Erreur lors de la désactivation de la catégorie");
     }
   };
 
@@ -379,20 +460,6 @@ export default function CategoryManagement() {
                           </SelectContent>
                         </Select>
                       </div>
-                      {/* <div className="space-y-2">
-                        <Label htmlFor="acteurId">ID Acteur</Label>
-                        <Input
-                          id="acteurId"
-                          type="number"
-                          value={newCategory.acteurId}
-                          onChange={(e) =>
-                            setNewCategory({
-                              ...newCategory,
-                              acteurId: parseInt(e.target.value) || 0,
-                            })
-                          }
-                        />
-                      </div> */}
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="description">Description</Label>
@@ -407,7 +474,6 @@ export default function CategoryManagement() {
                         }
                       />
                     </div>
-                    
                   </div>
                   <DialogFooter>
                     <Button
@@ -471,6 +537,28 @@ export default function CategoryManagement() {
                             >
                               <Edit className="mr-2 h-4 w-4" />
                               Modifier
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              onClick={() => {
+                                setCurrentCategory(category);
+                                setIsActivateCategoryOpen(true);
+                              }}
+                              disabled={category?.status}
+                              className="text-green-600"
+                            >
+                              <CheckCircle className="mr-2 h-4 w-4" />
+                              Activer
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              onClick={() => {
+                                setCurrentCategory(category);
+                                setIsDeactivateCategoryOpen(true);
+                              }}
+                              disabled={!category?.status}
+                              className="text-orange-600"
+                            >
+                              <XCircle className="mr-2 h-4 w-4" />
+                              Désactiver
                             </DropdownMenuItem>
                             <DropdownMenuItem
                               onClick={() => {
@@ -635,6 +723,88 @@ export default function CategoryManagement() {
             </Button>
             <Button variant="destructive" onClick={handleDeleteCategory}>
               Supprimer
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Activate Category Dialog */}
+      <Dialog open={isActivateCategoryOpen} onOpenChange={setIsActivateCategoryOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Activer la catégorie</DialogTitle>
+            <DialogDescription>
+              Êtes-vous sûr de vouloir activer cette catégorie ?
+            </DialogDescription>
+          </DialogHeader>
+          {currentCategory && (
+            <div className="py-4">
+              <div className="flex items-center space-x-4 bg-gray-50 p-4 rounded-lg">
+                <div className="h-10 w-10 rounded-full bg-gray-200 flex items-center justify-center">
+                  <Tag className="h-6 w-6 text-gray-500" />
+                </div>
+                <div>
+                  <p className="font-medium">{currentCategory.intitule}</p>
+                  <div className="flex items-center text-sm text-gray-500">
+                    Boutique: {currentCategory.shopNom || "-"}
+                  </div>
+                  <div className="flex items-center text-sm text-gray-500">
+                    Acteur: {currentCategory.acteurNom || "-"}
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setIsActivateCategoryOpen(false)}
+            >
+              Annuler
+            </Button>
+            <Button variant="default" className="bg-green-600 hover:bg-green-700" onClick={handleActivateCategory}>
+              Activer
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Deactivate Category Dialog */}
+      <Dialog open={isDeactivateCategoryOpen} onOpenChange={setIsDeactivateCategoryOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Désactiver la catégorie</DialogTitle>
+            <DialogDescription>
+              Êtes-vous sûr de vouloir désactiver cette catégorie ?
+            </DialogDescription>
+          </DialogHeader>
+          {currentCategory && (
+            <div className="py-4">
+              <div className="flex items-center space-x-4 bg-gray-50 p-4 rounded-lg">
+                <div className="h-10 w-10 rounded-full bg-gray-200 flex items-center justify-center">
+                  <Tag className="h-6 w-6 text-gray-500" />
+                </div>
+                <div>
+                  <p className="font-medium">{currentCategory.intitule}</p>
+                  <div className="flex items-center text-sm text-gray-500">
+                    Boutique: {currentCategory.shopNom || "-"}
+                  </div>
+                  <div className="flex items-center text-sm text-gray-500">
+                    Acteur: {currentCategory.acteurNom || "-"}
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setIsDeactivateCategoryOpen(false)}
+            >
+              Annuler
+            </Button>
+            <Button variant="default" className="bg-orange-600 hover:bg-orange-700" onClick={handleDeactivateCategory}>
+              Désactiver
             </Button>
           </DialogFooter>
         </DialogContent>

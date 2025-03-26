@@ -140,8 +140,34 @@ export default function DeliveryManagement() {
       }
     };
 
+    const fetchOrders = async () => {
+      try {
+        const response = await fetch(
+          `http://195.35.24.128:8081/api/commandes/liste`,
+          {
+            method: "GET",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+        if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
+        const data = await response.json();
+        const OrderList = data.data || [];
+        setOrders(OrderList);
+        setFilteredOrders(OrderList);
+        console.log("orders",OrderList);
+        toast.success("orders chargés avec succès");
+      } catch (err) {
+        console.error("Error fetching deliverers:", err.message);
+        toast.error("Erreur lors de la récupération des livreurs");
+      }
+    };
+
     fetchDeliverers();
     fecthUsers();
+    fetchOrders();
   }, []);
 
   // Filtrer les livreurs

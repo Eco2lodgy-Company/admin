@@ -1,99 +1,190 @@
-"use client"
-import React, { useState } from 'react';
-import { 
+"use client";
+import { Toaster } from "@/components/ui/sonner"
+import React, { useState, useEffect } from "react";
+import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
-  CardTitle 
-} from '@/components/ui/card';
-import { 
-  Tabs, 
-  TabsContent, 
-  TabsList, 
-  TabsTrigger 
-} from '@/components/ui/tabs';
-import { Label } from '@/components/ui/label';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
-// import { toast } from '@/components/ui/use-toast';
-import { User, Lock, Settings as SettingsIcon, X } from 'lucide-react';
+  CardTitle,
+} from "@/components/ui/card";
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "@/components/ui/tabs";
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
+import { User, Lock, Settings as SettingsIcon, X } from "lucide-react";
 
 const Settings = () => {
   const [profileData, setProfileData] = useState({
-    firstName: 'Admin',
-    lastName: 'User',
-    email: 'admin@example.com',
-    phone: '+33 6 12 34 56 78'
+    id: 0,
+    email: "",
+    nom: "",
+    prenom: "",
+    telephone: "",
+    adresse: "",
+    longitude: "",
+    latitude: "",
+    role: "",
   });
 
   const [passwordData, setPasswordData] = useState({
-    currentPassword: '',
-    newPassword: '',
-    confirmPassword: ''
+    email: "",
+    oldPassword: "",
+    newPassword: "",
+    confirmNewPassword: "",
   });
 
   const [isEditingProfile, setIsEditingProfile] = useState(false);
 
+  // Fetch profile data on component mount
+  useEffect(() => {
+    const fetchProfile = async () => {
+      const token = localStorage.getItem("token");
+      const username = localStorage.getItem("username");
+
+      try {
+        const response = await fetch(
+          `http://195.35.24.128:8081/api/user/findByUsername?email=${username}`,
+          {
+            method: "GET",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+
+        if (!response.ok) {
+          throw new Error(`HTTP error! Status: ${response.status}`);
+        }
+
+        const data = await response.json();
+        setProfileData({
+          id: data.data.id || 0,
+          email: data.data.email || "",
+          nom: data.data.nom || "",
+          prenom: data.data.prenom || "",
+          telephone: data.data.telephone || "",
+          adresse: data.data.adresse || "",
+          longitude: data.data.longitude || "",
+          latitude: data.data.latitude || "",
+          role: data.data.role || "",
+        });
+        toast.success("Profil chargé avec succès");
+      } catch (err) {
+        console.error("Error fetching profile:", err.message);
+        toast.error("Erreur lors de la récupération du profil");
+      }
+    };
+
+    fetchProfile();
+  }, []);
+
   const handleProfileChange = (e) => {
     const { id, value } = e.target;
-    setProfileData(prev => ({
+    setProfileData((prev) => ({
       ...prev,
-      [id]: value
+      [id]: value,
     }));
   };
 
   const handlePasswordChange = (e) => {
     const { id, value } = e.target;
-    setPasswordData(prev => ({
+    setPasswordData((prev) => ({
       ...prev,
-      [id]: value
+      [id]: value,
     }));
   };
 
-  const handleProfileSubmit = (e) => {
+  const handleProfileSubmit = async (e) => {
     e.preventDefault();
-    // Here would be the API call to update the profile
-    toast({
-      title: "Profil mis à jour",
-      description: "Vos informations personnelles ont été mises à jour avec succès."
-    });
-    setIsEditingProfile(false); // Close the modal after submission
+    const token = localStorage.getItem("token");
+    console.log("editing",profileData);
+    try {
+      const response = await fetch(
+        `http://195.35.24.128:8081/api/user/update`, // Ajout de l'ID dans l'URL
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify(profileData),
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! Status: ${response.status}`);
+      }
+
+      toast.success("Profil mis à jour avec succès");
+      setIsEditingProfile(false);
+    } catch (err) {
+      console.error("Error updating profile:", err.message);
+      toast.error("Erreur lors de la mise à jour du profil");
+    }
   };
 
-  const handlePasswordSubmit = (e) => {
+  const handlePasswordSubmit = async (e) => {
     e.preventDefault();
-    
-    // Validate password match
-    if (passwordData.newPassword !== passwordData.confirmPassword) {
-      toast({
-        variant: "destructive",
-        title: "Erreur",
-        description: "Les mots de passe ne correspondent pas."
-      });
+
+    if (passwordData.newPassword !== passwordData.confirmNewPassword) {
+      toast.error("Les mots de passe ne correspondent pas.");
       return;
     }
-    
-    // Here would be the API call to update the password
-    toast({
-      title: "Mot de passe modifié",
-      description: "Votre mot de passe a été mis à jour avec succès."
-    });
-    
-    // Reset password fields
-    setPasswordData({
-      currentPassword: '',
-      newPassword: '',
-      confirmPassword: ''
-    });
+
+    const token = localStorage.getItem("token");
+
+    const passwordPayload = {
+      email: profileData.email, // Utilise l'email du profil chargé
+      oldPassword: passwordData.oldPassword,
+      newPassword: passwordData.newPassword,
+      confirmNewPassword: passwordData.confirmNewPassword,
+    };
+
+    try {
+      const response = await fetch(
+        `http://195.35.24.128:8081/api/user/changePassword`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify(passwordPayload),
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! Status: ${response.status}`);
+      }
+
+      toast.success("Mot de passe modifié avec succès");
+      setPasswordData({
+        email: "",
+        oldPassword: "",
+        newPassword: "",
+        confirmNewPassword: "",
+      });
+    } catch (err) {
+      console.error("Error changing password:", err.message);
+      toast.error("Erreur lors du changement de mot de passe");
+    }
   };
 
   return (
     <div className="space-y-6">
+       <Toaster />
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">Paramètres</h1>
       </div>
-      
+
       <Tabs defaultValue="profile" className="space-y-4">
         <TabsList className="grid grid-cols-2 w-full max-w-md">
           <TabsTrigger value="profile" className="flex items-center gap-2">
@@ -105,7 +196,7 @@ const Settings = () => {
             <span>Sécurité</span>
           </TabsTrigger>
         </TabsList>
-        
+
         {/* Profile Settings */}
         <TabsContent value="profile">
           <Card>
@@ -120,11 +211,11 @@ const Settings = () => {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label>Prénom</Label>
-                    <p className="text-sm">{profileData.firstName}</p>
+                    <p className="text-sm">{profileData.prenom}</p>
                   </div>
                   <div className="space-y-2">
                     <Label>Nom</Label>
-                    <p className="text-sm">{profileData.lastName}</p>
+                    <p className="text-sm">{profileData.nom}</p>
                   </div>
                 </div>
                 <div className="space-y-2">
@@ -133,7 +224,11 @@ const Settings = () => {
                 </div>
                 <div className="space-y-2">
                   <Label>Téléphone</Label>
-                  <p className="text-sm">{profileData.phone}</p>
+                  <p className="text-sm">{profileData.telephone}</p>
+                </div>
+                <div className="space-y-2">
+                  <Label>Adresse</Label>
+                  <p className="text-sm">{profileData.adresse || "-"}</p>
                 </div>
                 <Button onClick={() => setIsEditingProfile(true)} className="mt-4">
                   Modifier le profil
@@ -142,49 +237,51 @@ const Settings = () => {
             </CardContent>
           </Card>
         </TabsContent>
-        
+
         {/* Security Settings */}
         <TabsContent value="security">
           <Card>
             <CardHeader>
               <CardTitle>Sécurité du compte</CardTitle>
-              <CardDescription>
-                Modifiez votre mot de passe
-              </CardDescription>
+              <CardDescription>Modifiez votre mot de passe</CardDescription>
             </CardHeader>
             <CardContent>
               <form onSubmit={handlePasswordSubmit} className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="currentPassword">Mot de passe actuel</Label>
-                  <Input 
-                    id="currentPassword" 
-                    type="password" 
-                    value={passwordData.currentPassword}
+                  <Label htmlFor="oldPassword">Mot de passe actuel</Label>
+                  <Input
+                    id="oldPassword"
+                    type="password"
+                    value={passwordData.oldPassword}
                     onChange={handlePasswordChange}
                     required
                   />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="newPassword">Nouveau mot de passe</Label>
-                  <Input 
-                    id="newPassword" 
-                    type="password" 
+                  <Input
+                    id="newPassword"
+                    type="password"
                     value={passwordData.newPassword}
                     onChange={handlePasswordChange}
                     required
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="confirmPassword">Confirmer le mot de passe</Label>
-                  <Input 
-                    id="confirmPassword" 
+                  <Label htmlFor="confirmNewPassword">
+                    Confirmer le mot de passe
+                  </Label>
+                  <Input
+                    id="confirmNewPassword"
                     type="password"
-                    value={passwordData.confirmPassword}
+                    value={passwordData.confirmNewPassword}
                     onChange={handlePasswordChange}
                     required
                   />
                 </div>
-                <Button type="submit" className="mt-4">Mettre à jour le mot de passe</Button>
+                <Button type="submit" className="mt-4">
+                  Mettre à jour le mot de passe
+                </Button>
               </form>
             </CardContent>
           </Card>
@@ -198,7 +295,11 @@ const Settings = () => {
             <CardHeader>
               <CardTitle className="flex items-center justify-between">
                 <span>Modifier le profil</span>
-                <Button variant="ghost" size="icon" onClick={() => setIsEditingProfile(false)}>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => setIsEditingProfile(false)}
+                >
                   <X className="h-4 w-4" />
                 </Button>
               </CardTitle>
@@ -210,41 +311,69 @@ const Settings = () => {
               <form onSubmit={handleProfileSubmit} className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="firstName">Prénom</Label>
-                    <Input 
-                      id="firstName" 
-                      value={profileData.firstName} 
+                    <Label htmlFor="prenom">Prénom</Label>
+                    <Input
+                      id="prenom"
+                      value={profileData.prenom}
                       onChange={handleProfileChange}
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="lastName">Nom</Label>
-                    <Input 
-                      id="lastName" 
-                      value={profileData.lastName} 
+                    <Label htmlFor="nom">Nom</Label>
+                    <Input
+                      id="nom"
+                      value={profileData.nom}
                       onChange={handleProfileChange}
                     />
                   </div>
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="email">Email</Label>
-                  <Input 
-                    id="email" 
-                    type="email" 
-                    value={profileData.email} 
+                  <Input
+                    id="email"
+                    type="email"
+                    value={profileData.email}
                     onChange={handleProfileChange}
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="phone">Téléphone</Label>
-                  <Input 
-                    id="phone" 
-                    value={profileData.phone} 
+                  <Label htmlFor="telephone">Téléphone</Label>
+                  <Input
+                    id="telephone"
+                    value={profileData.telephone}
+                    onChange={handleProfileChange}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="adresse">Adresse</Label>
+                  <Input
+                    id="adresse"
+                    value={profileData.adresse}
+                    onChange={handleProfileChange}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="longitude">Longitude</Label>
+                  <Input
+                    id="longitude"
+                    value={profileData.longitude}
+                    onChange={handleProfileChange}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="latitude">Latitude</Label>
+                  <Input
+                    id="latitude"
+                    value={profileData.latitude}
                     onChange={handleProfileChange}
                   />
                 </div>
                 <div className="flex justify-end gap-2 pt-4">
-                  <Button type="button" variant="outline" onClick={() => setIsEditingProfile(false)}>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setIsEditingProfile(false)}
+                  >
                     Annuler
                   </Button>
                   <Button type="submit">Mettre à jour</Button>

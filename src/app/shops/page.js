@@ -423,7 +423,7 @@ console.log(currentShop.id)
                           </SelectContent>
                         </Select>
                       </div>
-                      <div className="space-y-2">
+                      {/* <div className="space-y-2">
                         <Label htmlFor="acteurId">ID Acteur</Label>
                         <Input
                           id="acteurId"
@@ -436,8 +436,8 @@ console.log(currentShop.id)
                             })
                           }
                         />
-                      </div>
-                      <div className="space-y-2">
+                      </div> */}
+                      {/* <div className="space-y-2">
                         <Label htmlFor="longitude">Longitude</Label>
                         <Input
                           id="longitude"
@@ -451,8 +451,8 @@ console.log(currentShop.id)
                             })
                           }
                         />
-                      </div>
-                      <div className="space-y-2">
+                      </div> */}
+                      {/* <div className="space-y-2">
                         <Label htmlFor="latitude">Latitude</Label>
                         <Input
                           id="latitude"
@@ -466,7 +466,7 @@ console.log(currentShop.id)
                             })
                           }
                         />
-                      </div>
+                      </div> */}
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="description">Description</Label>

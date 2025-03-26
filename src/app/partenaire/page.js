@@ -1,13 +1,13 @@
-"use client"
-import React, { useState } from 'react';
-import { 
+"use client";
+import React, { useState, useEffect } from "react";
+import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-  CardFooter 
-} from '@/components/ui/card';
+  CardFooter,
+} from "@/components/ui/card";
 import {
   Table,
   TableBody,
@@ -15,128 +15,259 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@/components/ui/table';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Users, Plus, Search, Edit, Trash, Building, X } from 'lucide-react';
+} from "@/components/ui/table";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Users, Plus, Search, Edit, Trash, Building, X } from "lucide-react";
 import { toast } from "sonner";
 
-// Mock data for partners
-const mockPartners = [
-  {
-    id: 1,
-    name: "Restaurant Le Gourmet",
-    contactName: "Jean Dupont",
-    description: "Restaurant gastronomique partenaire",
-    address: "123 Rue de la Paix, Paris",
-    phone: "+33 1 23 45 67 89",
-    createdAt: "2023-04-15",
-  },
-  {
-    id: 2,
-    name: "Épicerie Bio Natura",
-    contactName: "Marie Martin",
-    description: "Épicerie bio et produits locaux",
-    address: "456 Avenue des Champs-Élysées, Paris",
-    phone: "+33 6 12 34 56 78",
-    createdAt: "2023-05-20",
-  },
-  {
-    id: 3,
-    name: "Café des Artistes",
-    contactName: "Pierre Durand",
-    description: "Café et pâtisseries artisanales",
-    address: "789 Boulevard Haussmann, Paris",
-    phone: "+33 7 98 76 54 32",
-    createdAt: "2023-06-10",
-  },
-];
-
 const Partners = () => {
-  const [partners, setPartners] = useState(mockPartners);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [showForm, setShowForm] = useState(false);
+  const [partners, setPartners] = useState([]);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [showAddForm, setShowAddForm] = useState(false);
+  const [showEditForm, setShowEditForm] = useState(false);
   const [currentPartner, setCurrentPartner] = useState(null);
-  const [formData, setFormData] = useState({
+  const [addFormData, setAddFormData] = useState({
+    email: "",
+    nom: "",
+    prenom: "",
+    telephone: "",
+    adresse: "",
+    longitude: 0,
+    latitude: 0,
+  });
+  const [editFormData, setEditFormData] = useState({
     id: null,
-    name: "",
-    contactName: "",
-    description: "",
-    address: "",
-    phone: "",
+    email: "",
+    nom: "",
+    prenom: "",
+    telephone: "",
+    adresse: "",
+    longitude: 0,
+    latitude: 0,
   });
 
-  const filteredPartners = partners.filter(partner => 
-    partner.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    partner.contactName.toLowerCase().includes(searchTerm.toLowerCase())
+  // Fetch partners from the API
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    const id = localStorage.getItem("username");
+    console.log("Token:", token);
+    console.log("id:", id);
+
+    const fetchPartners = async () => {
+      try {
+        const response = await fetch(
+          `http://195.35.24.128:8081/api/partenaires/liste?username=${id}`,
+          {
+            method: "GET",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+
+        if (!response.ok) {
+          throw new Error(`HTTP error! Status: ${response.status}`);
+        }
+
+        const data = await response.json();
+        setPartners(data.data || []);
+        console.log("Partners fetched:", data.data);
+        toast.success("Partenaires chargés avec succès");
+      } catch (err) {
+        console.error("Error fetching partners:", err.message);
+        toast.error("Erreur lors de la récupération des partenaires");
+      }
+    };
+
+    fetchPartners();
+  }, []);
+
+  const filteredPartners = partners.filter(
+    (partner) =>
+      partner?.nom.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      partner?.prenom.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const handleDelete = (id) => {
-    setPartners(partners.filter(partner => partner.id !== id));
-    toast.success("Partenaire supprimé avec succès");
+  const handleDelete = async (id) => {
+    const token = localStorage.getItem("token");
+    console.log("Token:", token);
+    console.log("ID:", id);
+
+    try {
+      const response = await fetch(
+        `http://195.35.24.128:8081/api/partenaires/delete?id=${id}`,
+        {
+          method: "DELETE",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! Status: ${response.status}`);
+      }
+
+      setPartners(partners.filter((partner) => partner.id !== id));
+      toast.success("Partenaire supprimé avec succès");
+    } catch (err) {
+      console.error("Error deleting partner:", err.message);
+      toast.error("Erreur lors de la suppression du partenaire");
+    }
   };
 
   const handleAdd = () => {
-    setCurrentPartner(null);
-    setFormData({
-      id: null,
-      name: "",
-      contactName: "",
-      description: "",
-      address: "",
-      phone: "",
+    setAddFormData({
+      email: "",
+      nom: "",
+      prenom: "",
+      telephone: "",
+      adresse: "",
+      longitude: 0,
+      latitude: 0,
     });
-    setShowForm(true);
+    setShowAddForm(true);
   };
 
   const handleEdit = (partner) => {
     setCurrentPartner(partner);
-    setFormData({
+    setEditFormData({
       id: partner.id,
-      name: partner.name,
-      contactName: partner.contactName,
-      description: partner.description,
-      address: partner.address,
-      phone: partner.phone,
+      email: partner.email,
+      nom: partner.nom,
+      prenom: partner.prenom,
+      telephone: partner.telephone,
+      adresse: partner.adresse,
+      longitude: partner.longitude,
+      latitude: partner.latitude,
     });
-    setShowForm(true);
+    setShowEditForm(true);
   };
 
-  const handleFormChange = (e) => {
+  const handleAddFormChange = (e) => {
     const { name, value } = e.target;
-    setFormData({
-      ...formData,
-      [name]: value,
+    setAddFormData({
+      ...addFormData,
+      [name]:
+        name === "longitude" || name === "latitude"
+          ? parseFloat(value) || 0
+          : value,
     });
   };
 
-  const handleSubmit = (e) => {
+  const handleEditFormChange = (e) => {
+    const { name, value } = e.target;
+    setEditFormData({
+      ...editFormData,
+      [name]:
+        name === "longitude" || name === "latitude"
+          ? parseFloat(value) || 0
+          : value,
+    });
+  };
+
+  const handleAddSubmit = async (e) => {
     e.preventDefault();
-    
-    if (currentPartner) {
-      // Update existing partner
-      const updatedPartners = partners.map(partner => 
-        partner.id === currentPartner.id ? { 
-          ...partner, 
-          ...formData 
-        } : partner
+
+    if (
+      !addFormData.email ||
+      !addFormData.nom ||
+      !addFormData.prenom ||
+      !addFormData.telephone ||
+      !addFormData.adresse
+    ) {
+      toast.error("Veuillez remplir tous les champs obligatoires");
+      return;
+    }
+
+    const token = localStorage.getItem("token");
+    const adminId = localStorage.getItem("logedUserId") || 2;
+
+    const partnerToSend = {
+      ...addFormData,
+      adminId: adminId,
+    };
+    console.log("Partner to send:", partnerToSend);
+
+    try {
+      const response = await fetch(`http://195.35.24.128:8081/api/partenaires/new`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(partnerToSend),
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! Status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      setPartners([...partners, data.data]);
+      toast.success(`Partenaire ${addFormData.nom} ajouté avec succès`);
+      setShowAddForm(false);
+    } catch (err) {
+      console.error("Error adding partner:", err.message);
+      toast.error("Erreur lors de l'ajout du partenaire");
+    }
+  };
+
+  const handleEditSubmit = async (e) => {
+    e.preventDefault();
+
+    if (
+      !editFormData.email ||
+      !editFormData.nom ||
+      !editFormData.prenom ||
+      !editFormData.telephone ||
+      !editFormData.adresse
+    ) {
+      toast.error("Veuillez remplir tous les champs obligatoires");
+      return;
+    }
+
+    const token = localStorage.getItem("token");
+    const adminId = localStorage.getItem("logedUserId") || 2;
+
+    const partnerToSend = {
+      ...editFormData,
+      adminId: adminId,
+    };
+
+    try {
+      const response = await fetch(
+        `http://195.35.24.128:8081/api/partenaires/update`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify(partnerToSend),
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! Status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      const updatedPartners = partners.map((partner) =>
+        partner.id === editFormData.id ? data.data : partner
       );
       setPartners(updatedPartners);
-      toast.success(`Partenaire ${formData.name} modifié avec succès`);
-    } else {
-      // Add new partner
-      const newPartner = {
-        ...formData,
-        id: partners.length > 0 ? Math.max(...partners.map(p => p.id)) + 1 : 1,
-        createdAt: new Date().toISOString().split('T')[0],
-      };
-      setPartners([...partners, newPartner]);
-      toast.success(`Partenaire ${formData.name} ajouté avec succès`);
+      toast.success(`Partenaire ${editFormData.nom} modifié avec succès`);
+      setShowEditForm(false);
+    } catch (err) {
+      console.error("Error updating partner:", err.message);
+      toast.error("Erreur lors de la mise à jour du partenaire");
     }
-    
-    setShowForm(false);
   };
 
   return (
@@ -158,7 +289,7 @@ const Partners = () => {
           <CardDescription>
             Gérez tous les partenaires que vous avez créés et administrés.
           </CardDescription>
-          
+
           <div className="mt-4 relative">
             <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
             <Input
@@ -175,8 +306,8 @@ const Partners = () => {
               <TableRow>
                 <TableHead>ID</TableHead>
                 <TableHead>Nom</TableHead>
-                <TableHead>Contact</TableHead>
-                <TableHead>Description</TableHead>
+                <TableHead>Prénom</TableHead>
+                <TableHead>Email</TableHead>
                 <TableHead>Adresse</TableHead>
                 <TableHead>Téléphone</TableHead>
                 <TableHead>Date de création</TableHead>
@@ -188,23 +319,25 @@ const Partners = () => {
                 filteredPartners.map((partner) => (
                   <TableRow key={partner.id}>
                     <TableCell className="font-medium">{partner.id}</TableCell>
-                    <TableCell>{partner.name}</TableCell>
-                    <TableCell>{partner.contactName}</TableCell>
-                    <TableCell className="max-w-[200px] truncate">{partner.description}</TableCell>
-                    <TableCell className="max-w-[200px] truncate">{partner.address}</TableCell>
-                    <TableCell>{partner.phone}</TableCell>
-                    <TableCell>{partner.createdAt}</TableCell>
+                    <TableCell>{partner.nom}</TableCell>
+                    <TableCell>{partner.prenom}</TableCell>
+                    <TableCell>{partner.email}</TableCell>
+                    <TableCell className="max-w-[200px] truncate">
+                      {partner.adresse}
+                    </TableCell>
+                    <TableCell>{partner.telephone}</TableCell>
+                    <TableCell>{partner.createdAt.split("T")[0]}</TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-2">
-                        <Button 
-                          variant="outline" 
+                        <Button
+                          variant="outline"
                           size="icon"
                           onClick={() => handleEdit(partner)}
                         >
                           <Edit className="h-4 w-4" />
                         </Button>
-                        <Button 
-                          variant="destructive" 
+                        <Button
+                          variant="destructive"
                           size="icon"
                           onClick={() => handleDelete(partner.id)}
                         >
@@ -226,93 +359,231 @@ const Partners = () => {
         </CardContent>
         <CardFooter className="border-t py-4 bg-gray-50">
           <div className="text-sm text-gray-500">
-            Affichage de {filteredPartners.length} partenaires sur {partners.length} au total
+            Affichage de {filteredPartners.length} partenaires sur{" "}
+            {partners.length} au total
           </div>
         </CardFooter>
       </Card>
 
-      {/* Overlay et formulaire d'ajout/modification */}
-      {showForm && (
+      {/* Overlay et formulaire d'ajout */}
+      {showAddForm && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <Card className="max-w-md w-full">
             <CardHeader>
               <CardTitle className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <Building className="h-5 w-5" />
-                  <span>{currentPartner ? "Modifier le partenaire" : "Ajouter un partenaire"}</span>
+                  <span>Ajouter un partenaire</span>
                 </div>
-                <Button variant="ghost" size="icon" onClick={() => setShowForm(false)}>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => setShowAddForm(false)}
+                >
                   <X className="h-5 w-5" />
                 </Button>
               </CardTitle>
               <CardDescription>
-                {currentPartner 
-                  ? "Modifiez les informations du partenaire existant" 
-                  : "Remplissez le formulaire pour ajouter un nouveau partenaire"}
+                Remplissez le formulaire pour ajouter un nouveau partenaire
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <form onSubmit={handleSubmit} className="space-y-4">
+              <form onSubmit={handleAddSubmit} className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="name">Nom du partenaire</Label>
+                    <Label htmlFor="nom">Nom</Label>
                     <Input
-                      id="name"
-                      name="name"
-                      value={formData.name}
-                      onChange={handleFormChange}
+                      id="nom"
+                      name="nom"
+                      value={addFormData.nom}
+                      onChange={handleAddFormChange}
                       required
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="contactName">Nom du contact</Label>
+                    <Label htmlFor="prenom">Prénom</Label>
                     <Input
-                      id="contactName"
-                      name="contactName"
-                      value={formData.contactName}
-                      onChange={handleFormChange}
+                      id="prenom"
+                      name="prenom"
+                      value={addFormData.prenom}
+                      onChange={handleAddFormChange}
                       required
                     />
                   </div>
                   <div className="space-y-2 md:col-span-2">
-                    <Label htmlFor="description">Description</Label>
-                    <Textarea
-                      id="description"
-                      name="description"
-                      value={formData.description}
-                      onChange={handleFormChange}
-                      rows={3}
+                    <Label htmlFor="email">Email</Label>
+                    <Input
+                      id="email"
+                      name="email"
+                      type="email"
+                      value={addFormData.email}
+                      onChange={handleAddFormChange}
                       required
                     />
                   </div>
                   <div className="space-y-2 md:col-span-2">
-                    <Label htmlFor="address">Adresse</Label>
+                    <Label htmlFor="adresse">Adresse</Label>
                     <Input
-                      id="address"
-                      name="address"
-                      value={formData.address}
-                      onChange={handleFormChange}
+                      id="adresse"
+                      name="adresse"
+                      value={addFormData.adresse}
+                      onChange={handleAddFormChange}
                       required
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="phone">Téléphone</Label>
+                    <Label htmlFor="telephone">Téléphone</Label>
                     <Input
-                      id="phone"
-                      name="phone"
-                      value={formData.phone}
-                      onChange={handleFormChange}
+                      id="telephone"
+                      name="telephone"
+                      value={addFormData.telephone}
+                      onChange={handleAddFormChange}
                       required
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="longitude">Longitude</Label>
+                    <Input
+                      id="longitude"
+                      name="longitude"
+                      type="number"
+                      value={addFormData.longitude}
+                      onChange={handleAddFormChange}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="latitude">Latitude</Label>
+                    <Input
+                      id="latitude"
+                      name="latitude"
+                      type="number"
+                      value={addFormData.latitude}
+                      onChange={handleAddFormChange}
                     />
                   </div>
                 </div>
                 <div className="flex justify-end gap-2 pt-4">
-                  <Button variant="outline" type="button" onClick={() => setShowForm(false)}>
+                  <Button
+                    variant="outline"
+                    type="button"
+                    onClick={() => setShowAddForm(false)}
+                  >
                     Annuler
                   </Button>
-                  <Button type="submit">
-                    {currentPartner ? "Mettre à jour" : "Ajouter"}
+                  <Button type="submit">Ajouter</Button>
+                </div>
+              </form>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
+      {/* Overlay et formulaire de modification */}
+      {showEditForm && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <Card className="max-w-md w-full">
+            <CardHeader>
+              <CardTitle className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Building className="h-5 w-5" />
+                  <span>Modifier le partenaire</span>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => setShowEditForm(false)}
+                >
+                  <X className="h-5 w-5" />
+                </Button>
+              </CardTitle>
+              <CardDescription>
+                Modifiez les informations du partenaire existant
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <form onSubmit={handleEditSubmit} className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="nom">Nom</Label>
+                    <Input
+                      id="nom"
+                      name="nom"
+                      value={editFormData.nom}
+                      onChange={handleEditFormChange}
+                      required
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="prenom">Prénom</Label>
+                    <Input
+                      id="prenom"
+                      name="prenom"
+                      value={editFormData.prenom}
+                      onChange={handleEditFormChange}
+                      required
+                    />
+                  </div>
+                  <div className="space-y-2 md:col-span-2">
+                    <Label htmlFor="email">Email</Label>
+                    <Input
+                      id="email"
+                      name="email"
+                      type="email"
+                      value={editFormData.email}
+                      onChange={handleEditFormChange}
+                      required
+                    />
+                  </div>
+                  <div className="space-y-2 md:col-span-2">
+                    <Label htmlFor="adresse">Adresse</Label>
+                    <Input
+                      id="adresse"
+                      name="adresse"
+                      value={editFormData.adresse}
+                      onChange={handleEditFormChange}
+                      required
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="telephone">Téléphone</Label>
+                    <Input
+                      id="telephone"
+                      name="telephone"
+                      value={editFormData.telephone}
+                      onChange={handleEditFormChange}
+                      required
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="longitude">Longitude</Label>
+                    <Input
+                      id="longitude"
+                      name="longitude"
+                      type="number"
+                      value={editFormData.longitude}
+                      onChange={handleEditFormChange}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="latitude">Latitude</Label>
+                    <Input
+                      id="latitude"
+                      name="latitude"
+                      type="number"
+                      value={editFormData.latitude}
+                      onChange={handleEditFormChange}
+                    />
+                  </div>
+                </div>
+                <div className="flex justify-end gap-2 pt-4">
+                  <Button
+                    variant="outline"
+                    type="button"
+                    onClick={() => setShowEditForm(false)}
+                  >
+                    Annuler
                   </Button>
+                  <Button type="submit">Mettre à jour</Button>
                 </div>
               </form>
             </CardContent>
