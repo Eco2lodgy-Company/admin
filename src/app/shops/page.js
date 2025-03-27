@@ -168,6 +168,7 @@ export default function ShopManagement() {
     }
 
     const token = localStorage.getItem("token");
+    const id = localStorage.getItem("logedUserId");
     const formData = new FormData();
     formData.append("nom", newShop.nom);
     formData.append("description", newShop.description);
@@ -179,12 +180,13 @@ export default function ShopManagement() {
       formData.append("banner", newShop.banner);
     }
     formData.append("vendeurId", newShop.vendeurId);
-    formData.append("acteurId", newShop.acteurId);
+    formData.append("acteurId", id);
     console.log(formData)
     try {
       const response = await fetch(`http://195.35.24.128:8081/api/shop/new`, {
         method: "POST",
         headers: {
+          contentType: "multipart/form-data",
           Authorization: `Bearer ${token}`,
         },
         body: formData,

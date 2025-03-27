@@ -305,12 +305,17 @@ const EditProductForm = ({ onClose, onEdit, categories, shops, currentProduct, s
         `http://195.35.24.128:8081/api/products/update/${currentProduct.id}`,
         {
           method: "PUT",
-          headers: { Authorization: `Bearer ${token}` },
+          headers: {
+             Authorization: `Bearer ${token}` },
+          
           body: formData,
         }
       );
 
-      if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
+      if (!response.ok) {
+        throw new Error(`HTTP error! Status: ${response.status}`);
+      }
+      console.log("response", response);
       const data = await response.json();
       onEdit(data.data);
       toast.success("Produit mis à jour avec succès");

@@ -531,14 +531,14 @@ export default function DeliveryManagement() {
                       filteredDeliverers.map((deliverer) => (
                         <TableRow key={deliverer.id}>
                           <TableCell className="font-medium">
-                            {deliverer.prenom} {deliverer.nom}
+                            {deliverer?.prenom} {deliverer?.nom}
                           </TableCell>
-                          <TableCell>{deliverer.email}</TableCell>
-                          <TableCell>{deliverer.telephone || "-"}</TableCell>
+                          <TableCell>{deliverer?.email}</TableCell>
+                          <TableCell>{deliverer?.telephone || "-"}</TableCell>
                           <TableCell className="max-w-[200px] truncate">
-                            {deliverer.adresse || "-"}
+                            {deliverer?.adresse || "-"}
                           </TableCell>
-                          <TableCell>{deliverer.moyenDeplacement || "-"}</TableCell>
+                          <TableCell>{deliverer?.moyenDeplacement || "-"}</TableCell>
                           <TableCell className="text-right">
                             <DropdownMenu>
                               <DropdownMenuTrigger asChild>
