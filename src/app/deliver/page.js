@@ -61,7 +61,6 @@ import {
   LocateFixed,
   Clock,
   CheckCircle,
-  AlertTriangle,
   Plus,
   Edit,
   Trash,
@@ -73,7 +72,7 @@ export default function DeliveryManagement() {
   const [deliverers, setDeliverers] = useState([]);
   const [users, setUsers] = useState([]);
   const [filteredDeliverers, setFilteredDeliverers] = useState([]);
-  const [orders, setOrders] = useState([]); // À remplir si vous avez une API pour les commandes
+  const [orders, setOrders] = useState([]); // Paniers
   const [filteredOrders, setFilteredOrders] = useState([]);
   const [selectedDeliverer, setSelectedDeliverer] = useState(null);
   const [showDelivererDetails, setShowDelivererDetails] = useState(false);
@@ -86,7 +85,7 @@ export default function DeliveryManagement() {
     moyenDeplacement: "",
   });
 
-  // Charger les livreurs depuis l'API
+  // Charger les données depuis les APIs
   useEffect(() => {
     const username = localStorage.getItem("username");
     const token = localStorage.getItem("token");
@@ -115,7 +114,7 @@ export default function DeliveryManagement() {
       }
     };
 
-    const fecthUsers = async () => {
+    const fetchUsers = async () => {
       try {
         const response = await fetch(
           `http://195.35.24.128:8081/api/user/liste?username=${username}`,
@@ -129,11 +128,9 @@ export default function DeliveryManagement() {
         );
         if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
         const data = await response.json();
-        const delivererList = data.data || [];
-        setUsers(delivererList);
-        console.log(delivererList);
-        // setFilteredDeliverers(delivererList);
-        toast.success("Livreurs chargés avec succès");
+        const userList = data.data || [];
+        setUsers(userList);
+        toast.success("Utilisateurs chargés avec succès");
       } catch (err) {
         console.error("Error fetching users:", err.message);
         toast.error("Erreur lors de la récupération des utilisateurs");
@@ -143,7 +140,7 @@ export default function DeliveryManagement() {
     const fetchOrders = async () => {
       try {
         const response = await fetch(
-          `http://195.35.24.128:8081/api/commandes/liste`,
+          `http://195.35.24.128:8081/api/paniers/admin/liste?username=${username}`,
           {
             method: "GET",
             headers: {
@@ -154,19 +151,19 @@ export default function DeliveryManagement() {
         );
         if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
         const data = await response.json();
-        const OrderList = data.data || [];
-        setOrders(OrderList);
-        setFilteredOrders(OrderList);
-        console.log("orders",OrderList);
-        toast.success("orders chargés avec succès");
+        const orderList = data.data || [];
+        setOrders(orderList);
+        setFilteredOrders(orderList);
+        console.log("Paniers:", orderList);
+        toast.success("Paniers chargés avec succès");
       } catch (err) {
-        console.error("Error fetching deliverers:", err.message);
-        toast.error("Erreur lors de la récupération des livreurs");
+        console.error("Error fetching orders:", err.message);
+        toast.error("Erreur lors de la récupération des paniers");
       }
     };
 
     fetchDeliverers();
-    fecthUsers();
+    fetchUsers();
     fetchOrders();
   }, []);
 
@@ -183,15 +180,15 @@ export default function DeliveryManagement() {
     setFilteredDeliverers(filtered);
   };
 
-  // Filtrer les commandes (à implémenter si vous avez une API pour les commandes)
+  // Filtrer les paniers
   const handleSearchOrders = (e) => {
     const query = e.target.value.toLowerCase();
     setSearchQuery(query);
     const filtered = orders.filter(
       (order) =>
         order.id.toString().includes(query) ||
-        (order.deliverer && order.deliverer.toLowerCase().includes(query)) ||
-        order.delivery_address.toLowerCase().includes(query)
+        order.clientNom.toLowerCase().includes(query) ||
+        order.clientEmail.toLowerCase().includes(query)
     );
     setFilteredOrders(filtered);
   };
@@ -199,9 +196,7 @@ export default function DeliveryManagement() {
   // Ajouter un livreur
   const handleAddDeliverer = async () => {
     const token = localStorage.getItem("token");
-    const acteurId = localStorage.getItem("logedUserId"); // Récupéré depuis localStorage
-
-   
+    const acteurId = localStorage.getItem("logedUserId");
 
     if (!newDeliverer.livreurUserId || !newDeliverer.moyenDeplacement) {
       toast.error("Veuillez remplir tous les champs obligatoires");
@@ -213,7 +208,6 @@ export default function DeliveryManagement() {
       acteurId: parseInt(acteurId),
       moyenDeplacement: newDeliverer.moyenDeplacement,
     };
-    console.log(delivererData);
 
     try {
       const response = await fetch(`http://195.35.24.128:8081/api/livreurs/new`, {
@@ -242,7 +236,7 @@ export default function DeliveryManagement() {
   // Modifier un livreur
   const handleEditDeliverer = async () => {
     const token = localStorage.getItem("token");
-    const acteurId = localStorage.getItem("acteurId");
+    const acteurId = localStorage.getItem("logedUserId");
 
     if (!selectedDeliverer.livreurUserId || !selectedDeliverer.moyenDeplacement) {
       toast.error("Veuillez remplir tous les champs obligatoires");
@@ -250,14 +244,15 @@ export default function DeliveryManagement() {
     }
 
     const delivererData = {
-      livreurUserId: parseInt(selectedDeliverer.livreurUserId),
+      idLivreur: parseInt(selectedDeliverer.livreurUserId),
       acteurId: parseInt(acteurId),
+      isDisponible: true,
       moyenDeplacement: selectedDeliverer.moyenDeplacement,
     };
 
     try {
       const response = await fetch(
-        `http://195.35.24.128:8081/api/deliverers/update/${selectedDeliverer.id}`,
+        `http://195.35.24.128:8081/api/livreurs/update`,
         {
           method: "PUT",
           headers: {
@@ -285,7 +280,7 @@ export default function DeliveryManagement() {
     }
   };
 
-  // Supprimer un livreur (non demandé mais laissé pour cohérence)
+  // Supprimer un livreur
   const handleDeleteDeliverer = async () => {
     const token = localStorage.getItem("token");
 
@@ -318,41 +313,39 @@ export default function DeliveryManagement() {
     setFilteredOrders(orders);
   }, [activeTab, deliverers, orders]);
 
-  // Badge de statut pour les commandes
-  const getStatusBadge = (status) => {
-    switch (status) {
-      case "pending":
-        return (
-          <Badge variant="outline" className="bg-yellow-100 text-yellow-800 hover:bg-yellow-100">
-            En attente
-          </Badge>
-        );
-      case "in_progress":
-        return (
-          <Badge variant="outline" className="bg-blue-100 text-blue-800 hover:bg-blue-100">
-            En cours
-          </Badge>
-        );
-      case "delivered":
-        return (
-          <Badge variant="outline" className="bg-green-100 text-green-800 hover:bg-green-100">
-            Livré
-          </Badge>
-        );
-      default:
-        return (
-          <Badge variant="outline" className="bg-gray-100 text-gray-800 hover:bg-gray-100">
-            {status}
-          </Badge>
-        );
+  // Badge de statut pour les paniers
+  const getStatusBadge = (isApproved) => {
+    if (isApproved === null) {
+      return (
+        <Badge variant="outline" className="bg-yellow-100 text-yellow-800 hover:bg-yellow-100">
+          En attente
+        </Badge>
+      );
+    } else if (isApproved) {
+      return (
+        <Badge variant="outline" className="bg-green-100 text-green-800 hover:bg-green-100">
+          Approuvé
+        </Badge>
+      );
+    } else {
+      return (
+        <Badge variant="outline" className="bg-red-100 text-red-800 hover:bg-red-100">
+          Refusé
+        </Badge>
+      );
     }
   };
 
-  // Formatter la devise (pour les commandes, si applicable)
+  // Calculer le montant total d'un panier
+  const calculateTotalAmount = (produits) => {
+    return produits.reduce((total, produit) => total + produit.quantite * produit.prix, 0);
+  };
+
+  // Formatter la devise
   const formatCurrency = (amount) => {
     return new Intl.NumberFormat("fr-FR", {
       style: "currency",
-      currency: "EUR",
+      currency: "XOF", // Adapté à votre contexte, ajustez si nécessaire
     }).format(amount);
   };
 
@@ -360,7 +353,7 @@ export default function DeliveryManagement() {
     <div className="space-y-6">
       <div className="flex flex-col">
         <h1 className="text-2xl font-bold">Gestion des livraisons</h1>
-        <p className="text-gray-500 mt-1">Gérez les livreurs et les commandes en cours</p>
+        <p className="text-gray-500 mt-1">Gérez les livreurs et les paniers en cours</p>
       </div>
 
       {/* Statistiques */}
@@ -371,7 +364,7 @@ export default function DeliveryManagement() {
               <div>
                 <p className="text-sm font-medium text-yellow-800">En attente</p>
                 <h3 className="text-2xl font-bold text-yellow-900 mt-1">
-                  {orders.filter((order) => order.status === "pending").length}
+                  {orders.filter((order) => order.produits.some((p) => p.isApproved === null)).length}
                 </h3>
               </div>
               <div className="h-12 w-12 bg-yellow-200 rounded-full flex items-center justify-center text-yellow-700">
@@ -385,9 +378,7 @@ export default function DeliveryManagement() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-blue-800">En cours</p>
-                <h3 className="text-2xl font-bold text-blue-900 mt-1">
-                  {orders.filter((order) => order.status === "in_progress").length}
-                </h3>
+                <h3 className="text-2xl font-bold text-blue-900 mt-1">0</h3> {/* À adapter si vous avez un statut "en cours" */}
               </div>
               <div className="h-12 w-12 bg-blue-200 rounded-full flex items-center justify-center text-blue-700">
                 <LocateFixed className="h-6 w-6" />
@@ -400,9 +391,7 @@ export default function DeliveryManagement() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-green-800">Livrées</p>
-                <h3 className="text-2xl font-bold text-green-900 mt-1">
-                  {orders.filter((order) => order.status === "delivered").length}
-                </h3>
+                <h3 className="text-2xl font-bold text-green-900 mt-1">0</h3> {/* À adapter si vous avez un statut "livré" */}
               </div>
               <div className="h-12 w-12 bg-green-200 rounded-full flex items-center justify-center text-green-700">
                 <CheckCircle className="h-6 w-6" />
@@ -416,7 +405,7 @@ export default function DeliveryManagement() {
       <Tabs defaultValue="deliverers" className="space-y-4" onValueChange={setActiveTab}>
         <TabsList className="grid w-full grid-cols-2">
           <TabsTrigger value="deliverers">Livreurs</TabsTrigger>
-          <TabsTrigger value="orders">Commandes</TabsTrigger>
+          <TabsTrigger value="orders">Paniers</TabsTrigger>
         </TabsList>
 
         {/* Onglet Livreurs */}
@@ -470,7 +459,6 @@ export default function DeliveryManagement() {
                             <SelectContent>
                               {users
                                 .filter((u) => u.role === "LIVREUR")
-                                // .filter((d) => d.role === "Livreur")
                                 .map((deliverer) => (
                                   <SelectItem key={deliverer.id} value={deliverer.id.toString()}>
                                     {deliverer.prenom} {deliverer.nom} ({deliverer.email})
@@ -599,22 +587,22 @@ export default function DeliveryManagement() {
           </Card>
         </TabsContent>
 
-        {/* Onglet Commandes */}
+        {/* Onglet Paniers */}
         <TabsContent value="orders" className="space-y-4">
           <Card>
             <CardHeader className="pb-2">
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                 <div>
-                  <CardTitle className="text-lg">Commandes en livraison</CardTitle>
+                  <CardTitle className="text-lg">Paniers en attente</CardTitle>
                   <CardDescription>
-                    {filteredOrders.length} commande{filteredOrders.length !== 1 ? "s" : ""}
+                    {filteredOrders.length} panier{filteredOrders.length !== 1 ? "s" : ""}
                   </CardDescription>
                 </div>
                 <div className="relative">
                   <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
                   <Input
                     type="search"
-                    placeholder="Rechercher une commande..."
+                    placeholder="Rechercher un panier..."
                     className="pl-8 w-full sm:w-[260px]"
                     value={searchQuery}
                     onChange={handleSearchOrders}
@@ -628,10 +616,11 @@ export default function DeliveryManagement() {
                   <TableHeader>
                     <TableRow>
                       <TableHead>ID</TableHead>
-                      <TableHead>Livreur</TableHead>
+                      <TableHead>Client</TableHead>
                       <TableHead>Statut</TableHead>
-                      <TableHead>Adresse</TableHead>
+                      <TableHead>Produit(s)</TableHead>
                       <TableHead>Montant</TableHead>
+                      <TableHead>Date</TableHead>
                       <TableHead className="text-right">Actions</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -640,12 +629,13 @@ export default function DeliveryManagement() {
                       filteredOrders.map((order) => (
                         <TableRow key={order.id}>
                           <TableCell className="font-medium">#{order.id}</TableCell>
-                          <TableCell>{order.deliverer || "Non assigné"}</TableCell>
-                          <TableCell>{getStatusBadge(order.status)}</TableCell>
+                          <TableCell>{order.clientNom} ({order.clientEmail})</TableCell>
+                          <TableCell>{getStatusBadge(order.produits[0].isApproved)}</TableCell>
                           <TableCell className="max-w-[200px] truncate">
-                            {order.delivery_address}
+                            {order.produits.map((p) => p.nom).join(", ")}
                           </TableCell>
-                          <TableCell>{formatCurrency(order.total_amount)}</TableCell>
+                          <TableCell>{formatCurrency(calculateTotalAmount(order.produits))}</TableCell>
+                          <TableCell>{order.createdAt.split("T")[0]}</TableCell>
                           <TableCell className="text-right">
                             <DropdownMenu>
                               <DropdownMenuTrigger asChild>
@@ -659,7 +649,8 @@ export default function DeliveryManagement() {
                                 <DropdownMenuSeparator />
                                 <DropdownMenuItem
                                   onClick={() => {
-                                    toast.success(`Détails de la commande #${order.id}`);
+                                    toast.success(`Détails du panier #${order.id}`);
+                                    console.log(order); // Ajouter un dialog pour les détails si nécessaire
                                   }}
                                 >
                                   <Package2 className="mr-2 h-4 w-4" />
@@ -672,8 +663,8 @@ export default function DeliveryManagement() {
                       ))
                     ) : (
                       <TableRow>
-                        <TableCell colSpan={6} className="h-24 text-center">
-                          Aucune commande trouvée.
+                        <TableCell colSpan={7} className="h-24 text-center">
+                          Aucun panier trouvé.
                         </TableCell>
                       </TableRow>
                     )}
@@ -764,8 +755,8 @@ export default function DeliveryManagement() {
                     <SelectValue placeholder="Sélectionner un livreur" />
                   </SelectTrigger>
                   <SelectContent>
-                    {deliverers
-                      .filter((d) => d.role === "Livreur")
+                    {users
+                      .filter((u) => u.role === "LIVREUR")
                       .map((deliverer) => (
                         <SelectItem key={deliverer.id} value={deliverer.id.toString()}>
                           {deliverer.prenom} {deliverer.nom} ({deliverer.email})

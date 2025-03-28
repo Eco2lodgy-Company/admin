@@ -1,24 +1,24 @@
-"use client"
-import React, { useState } from 'react';
-import { 
-  Card, 
-  CardContent, 
-  CardDescription, 
-  CardHeader, 
+"use client";
+import React, { useState, useEffect } from "react";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
   CardTitle,
-  CardFooter 
+  CardFooter,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { 
-  Table, 
-  TableBody, 
-  TableCell, 
-  TableHead, 
-  TableHeader, 
-  TableRow 
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
 } from "@/components/ui/table";
 import {
   AlertDialog,
@@ -30,153 +30,247 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { 
+import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
-import { 
-  Plus, 
-  Edit, 
-  Trash, 
+import {
+  Plus,
+  Edit,
+  Trash,
   X,
   Calendar as CalendarIcon,
   Image,
   Save,
-  AlertTriangle
+  AlertTriangle,
+  Clock,
 } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 
-// Données fictives pour les publicités
-const initialAds = [
-  { 
-    id: 1, 
-    name: "Promotion d'été", 
-    description: "Profitez de nos offres spéciales tout l'été", 
-    image: "/placeholder.svg",
-    startDate: new Date(2023, 5, 1), // Juin 1, 2023
-    endDate: new Date(2023, 7, 31), // Août 31, 2023
-    isActive: true
-  },
-  { 
-    id: 2, 
-    name: "Offre Flash", 
-    description: "24h seulement! Réductions exceptionnelles", 
-    image: "/placeholder.svg",
-    startDate: new Date(2023, 6, 15), // Juillet 15, 2023
-    endDate: new Date(2023, 6, 16), // Juillet 16, 2023
-    isActive: false
-  },
-  { 
-    id: 3, 
-    name: "Soldes d'hiver", 
-    description: "Grandes réductions sur tous nos produits", 
-    image: "/placeholder.svg",
-    startDate: new Date(2023, 11, 1), // Décembre 1, 2023
-    endDate: new Date(2024, 0, 31), // Janvier 31, 2024
-    isActive: true
-  },
-];
-
 const Advertisements = () => {
-  const [ads, setAds] = useState(initialAds);
+  const [ads, setAds] = useState([]);
   const [isEditing, setIsEditing] = useState(false);
   const [adToDelete, setAdToDelete] = useState(null);
   const [formData, setFormData] = useState({
     id: null,
-    name: "",
+    intitule: "",
     description: "",
-    image: "/placeholder.svg",
-    startDate: new Date(),
-    endDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // Une semaine plus tard par défaut
-    isActive: true
+    media: null,
+    mediaPath: "",
+    dateDebut: new Date(),
+    dateFin: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+    status: true,
   });
+  const [startTime, setStartTime] = useState("00:00");
+  const [endTime, setEndTime] = useState("23:59");
+
+  // Charger les publicités au démarrage
+  useEffect(() => {
+    const fetchAds = async () => {
+      const username = localStorage.getItem("username");
+      const token = localStorage.getItem("token");
+
+      try {
+        const response = await fetch(
+          `http://195.35.24.128:8081/api/pubs/liste?username=${username}`,
+          {
+            method: "GET",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+        if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
+        const data = await response.json();
+        setAds(data.data || []);
+        toast.success("Publicités chargées avec succès");
+      } catch (err) {
+        console.error("Error fetching ads:", err.message);
+        toast.error("Erreur lors de la récupération des publicités");
+      }
+    };
+
+    fetchAds();
+  }, []);
 
   const handleAddNewAd = () => {
     setFormData({
       id: null,
-      name: "",
+      intitule: "",
       description: "",
-      image: "/placeholder.svg",
-      startDate: new Date(),
-      endDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
-      isActive: true
+      media: null,
+      mediaPath: "",
+      dateDebut: new Date(),
+      dateFin: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+      status: true,
     });
+    setStartTime("00:00");
+    setEndTime("23:59");
     setIsEditing(true);
   };
 
   const handleEditAd = (ad) => {
-    setFormData({ ...ad });
+    const debut = ad.dateDebut ? new Date(ad.dateDebut) : new Date();
+    const fin = ad.dateFin ? new Date(ad.dateFin) : new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+    setFormData({
+      id: ad.id,
+      intitule: ad.intitule || "",
+      description: ad.description || "",
+      media: null,
+      mediaPath: ad.mediaPath || "",
+      dateDebut: debut,
+      dateFin: fin,
+      status: ad.status,
+    });
+    setStartTime(ad.dateDebut ? format(new Date(ad.dateDebut), "HH:mm") : "00:00");
+    setEndTime(ad.dateFin ? format(new Date(ad.dateFin), "HH:mm") : "23:59");
     setIsEditing(true);
   };
 
-  const handleDeleteConfirm = (id) => {
-    setAds(ads.filter(ad => ad.id !== id));
-    setAdToDelete(null);
-    toast.success("Publicité supprimée avec succès");
+  const handleDeleteConfirm = async () => {
+    const token = localStorage.getItem("token");
+
+    try {
+      const response = await fetch(
+        `http://195.35.24.128:8081/api/pubs/delete/${adToDelete.id}`,
+        {
+          method: "DELETE",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+      if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
+      setAds(ads.filter((ad) => ad.id !== adToDelete.id));
+      setAdToDelete(null);
+      toast.success("Publicité supprimée avec succès");
+    } catch (err) {
+      console.error("Error deleting ad:", err.message);
+      toast.error("Erreur lors de la suppression de la publicité");
+    }
   };
 
   const handleFormChange = (e) => {
     const { name, value } = e.target;
     setFormData({
       ...formData,
-      [name]: value
+      [name]: value,
+    });
+  };
+
+  const handleFileChange = (e) => {
+    setFormData({
+      ...formData,
+      media: e.target.files[0],
     });
   };
 
   const handleDateChange = (field, date) => {
+    const time = field === "dateDebut" ? startTime : endTime;
+    const [hours, minutes] = time.split(":");
+    date.setHours(parseInt(hours), parseInt(minutes));
     setFormData({
       ...formData,
-      [field]: date
+      [field]: date,
     });
+  };
+
+  const handleTimeChange = (field, value) => {
+    const [hours, minutes] = value.split(":");
+    const dateField = field === "startTime" ? "dateDebut" : "dateFin";
+    const newDate = new Date(formData[dateField]);
+    newDate.setHours(parseInt(hours), parseInt(minutes));
+    setFormData({
+      ...formData,
+      [dateField]: newDate,
+    });
+    if (field === "startTime") setStartTime(value);
+    else setEndTime(value);
   };
 
   const handleToggleActive = () => {
     setFormData({
       ...formData,
-      isActive: !formData.isActive
+      status: !formData.status,
     });
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    
-    if (!formData.name || !formData.description || !formData.startDate || !formData.endDate) {
-      toast.error("Veuillez remplir tous les champs obligatoires");
+
+    if (!formData.intitule || !formData.description) {
+      toast.error("Veuillez remplir tous les champs obligatoires (intitulé et description)");
       return;
     }
-    
-    if (formData.startDate > formData.endDate) {
+
+    if (formData.dateDebut > formData.dateFin) {
       toast.error("La date de début doit être antérieure à la date de fin");
       return;
     }
-    
-    if (formData.id) {
-      // Mettre à jour une publicité existante
-      const updatedAds = ads.map(ad => 
-        ad.id === formData.id ? { ...formData } : ad
+
+    const token = localStorage.getItem("token");
+    const acteurId = localStorage.getItem("logedUserId") || 2;
+
+    const formDataToSend = new FormData();
+    formDataToSend.append("id", formData.id || null);
+    formDataToSend.append("acteurId", acteurId);
+    formDataToSend.append("intitule", formData.intitule);
+    formDataToSend.append("description", formData.description);
+    if (formData.media) formDataToSend.append("media", formData.media);
+    formDataToSend.append("dateDebut", formData.dateDebut.toISOString());
+    formDataToSend.append("dateFin", formData.dateFin.toISOString());
+    formDataToSend.append("status", formData.status);
+    console.log("Form data to send:", Object.fromEntries(formDataToSend.entries()));
+
+    try {
+      let response;
+      if (formData.id) {
+        response = await fetch(`http://195.35.24.128:8081/api/pubs/update`, {
+          method: "PUT",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+          body: formDataToSend,
+        });
+      } else {
+        response = await fetch(`http://195.35.24.128:8081/api/pubs/new`, {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+          body: formDataToSend,
+        });
+      }
+
+      if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
+      const data = await response.json();
+      const updatedAd = data.data;
+
+      if (formData.id) {
+        setAds(ads.map((ad) => (ad.id === updatedAd.id ? updatedAd : ad)));
+        toast.success("Publicité mise à jour avec succès");
+      } else {
+        setAds([...ads, updatedAd]);
+        toast.success("Nouvelle publicité ajoutée avec succès");
+      }
+
+      setIsEditing(false);
+    } catch (err) {
+      console.error("Error submitting ad:", err.message);
+      toast.error(
+        `Erreur lors de ${formData.id ? "la mise à jour" : "l'ajout"} de la publicité`
       );
-      setAds(updatedAds);
-      toast.success("Publicité mise à jour avec succès");
-    } else {
-      // Ajouter une nouvelle publicité
-      const newAd = {
-        ...formData,
-        id: ads.length > 0 ? Math.max(...ads.map(a => a.id)) + 1 : 1,
-      };
-      setAds([...ads, newAd]);
-      toast.success("Nouvelle publicité ajoutée avec succès");
     }
-    
-    setIsEditing(false);
   };
 
   const isActive = (ad) => {
     const now = new Date();
-    return ad.isActive && ad.startDate <= now && ad.endDate >= now;
+    return ad.status && (!ad.dateDebut || new Date(ad.dateDebut) <= now) && (!ad.dateFin || new Date(ad.dateFin) >= now);
   };
 
   return (
@@ -186,7 +280,6 @@ const Advertisements = () => {
           <h1 className="text-2xl font-bold">Gestion des Publicités</h1>
           <p className="text-gray-500 mt-1">Programmez et gérez vos campagnes publicitaires</p>
         </div>
-        
         <Button onClick={handleAddNewAd} className="flex items-center gap-2">
           <Plus size={16} />
           <span>Ajouter une publicité</span>
@@ -209,7 +302,7 @@ const Advertisements = () => {
             <TableHeader>
               <TableRow>
                 <TableHead>ID</TableHead>
-                <TableHead>Nom</TableHead>
+                <TableHead>Intitulé</TableHead>
                 <TableHead>Description</TableHead>
                 <TableHead>Image</TableHead>
                 <TableHead>Date de début</TableHead>
@@ -221,28 +314,35 @@ const Advertisements = () => {
             <TableBody>
               {ads.length > 0 ? (
                 ads.map((ad) => (
-                  <TableRow key={ad.id}>
-                    <TableCell className="font-medium">{ad.id}</TableCell>
-                    <TableCell>{ad.name}</TableCell>
-                    <TableCell className="max-w-[200px] truncate">{ad.description}</TableCell>
+                  <TableRow key={ad?.id}>
+                    <TableCell className="font-medium">{ad?.id}</TableCell>
+                    <TableCell>{ad?.intitule || "-"}</TableCell>
+                    <TableCell className="max-w-[200px] truncate">{ad?.description || "-"}</TableCell>
                     <TableCell>
                       <div className="h-10 w-10 rounded-md bg-gray-100 overflow-hidden">
-                        <img 
-                          src={ad.image} 
-                          alt={ad.name}
+                        <img
+                          src={ad?.mediaPath ? `http://195.35.24.128:8081${ad?.mediaPath}` : "/placeholder.svg"}
+                          alt={ad?.intitule || "Publicité"}
                           className="h-full w-full object-cover"
+                          // onError={(e) => (e.target.src = "/placeholder.svg")} // Image par défaut en cas d'erreur
                         />
                       </div>
                     </TableCell>
-                    <TableCell>{format(ad.startDate, "dd/MM/yyyy")}</TableCell>
-                    <TableCell>{format(ad.endDate, "dd/MM/yyyy")}</TableCell>
                     <TableCell>
-                      <span className={cn(
-                        "px-2 py-1 rounded-full text-xs font-medium",
-                        isActive(ad) 
-                          ? "bg-green-100 text-green-800" 
-                          : "bg-gray-100 text-gray-800"
-                      )}>
+                      {ad?.dateDebut ? format(new Date(ad?.dateDebut), "dd/MM/yyyy HH:mm") : "-"}
+                    </TableCell>
+                    <TableCell>
+                      {ad?.dateFin ? format(new Date(ad?.dateFin), "dd/MM/yyyy HH:mm") : "-"}
+                    </TableCell>
+                    <TableCell>
+                      <span
+                        className={cn(
+                          "px-2 py-1 rounded-full text-xs font-medium",
+                          isActive(ad)
+                            ? "bg-green-100 text-green-800"
+                            : "bg-gray-100 text-gray-800"
+                        )}
+                      >
                         {isActive(ad) ? "Actif" : "Inactif"}
                       </span>
                     </TableCell>
@@ -251,9 +351,9 @@ const Advertisements = () => {
                         <Button variant="outline" size="icon" onClick={() => handleEditAd(ad)}>
                           <Edit className="h-4 w-4" />
                         </Button>
-                        <Button 
-                          variant="destructive" 
-                          size="icon" 
+                        <Button
+                          variant="destructive"
+                          size="icon"
                           onClick={() => setAdToDelete(ad)}
                         >
                           <Trash className="h-4 w-4" />
@@ -301,25 +401,45 @@ const Advertisements = () => {
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="name">Nom de la publicité</Label>
+                    <Label htmlFor="intitule">Intitulé</Label>
                     <Input
-                      id="name"
-                      name="name"
-                      placeholder="Promotion d'été"
-                      value={formData.name}
+                      id="intitule"
+                      name="intitule"
+                      placeholder="Promotion spéciale"
+                      value={formData.intitule}
                       onChange={handleFormChange}
                       required
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="image">URL de l'image</Label>
+                    <Label htmlFor="media">Image</Label>
                     <Input
-                      id="image"
-                      name="image"
-                      placeholder="/images/ad-summer.jpg"
-                      value={formData.image}
-                      onChange={handleFormChange}
+                      id="media"
+                      type="file"
+                      accept="image/*"
+                      onChange={handleFileChange}
                     />
+                    {formData.mediaPath && !formData.media && (
+                      <div className="mt-2">
+                        <img
+                          src={`http://195.35.24.128:8081${formData.mediaPath}`}
+                          alt="Prévisualisation"
+                          className="h-20 w-20 object-cover rounded-md"
+                          onError={(e) => (e.target.src = "/placeholder.svg")}
+                        />
+                        <p className="text-sm text-gray-500">Image actuelle</p>
+                      </div>
+                    )}
+                    {formData.media && (
+                      <div className="mt-2">
+                        <img
+                          src={URL.createObjectURL(formData.media)}
+                          alt="Prévisualisation"
+                          className="h-20 w-20 object-cover rounded-md"
+                        />
+                        <p className="text-sm text-gray-500">Nouvelle image sélectionnée</p>
+                      </div>
+                    )}
                   </div>
                   <div className="space-y-2 md:col-span-2">
                     <Label htmlFor="description">Description</Label>
@@ -334,65 +454,81 @@ const Advertisements = () => {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label>Date de début</Label>
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <Button
-                          variant="outline"
-                          className={cn(
-                            "w-full justify-start text-left font-normal",
-                            !formData.startDate && "text-muted-foreground"
-                          )}
-                        >
-                          <CalendarIcon className="mr-2 h-4 w-4" />
-                          {formData.startDate ? format(formData.startDate, "PPP") : <span>Choisir une date</span>}
-                        </Button>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0" align="start">
-                        <Calendar
-                          mode="single"
-                          selected={formData.startDate}
-                          onSelect={(date) => handleDateChange("startDate", date)}
-                          initialFocus
-                          className="pointer-events-auto"
-                        />
-                      </PopoverContent>
-                    </Popover>
+                    <Label>Date et heure de début</Label>
+                    <div className="flex gap-2">
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <Button
+                            variant="outline"
+                            className={cn(
+                              "w-full justify-start text-left font-normal",
+                              !formData.dateDebut && "text-muted-foreground"
+                            )}
+                          >
+                            <CalendarIcon className="mr-2 h-4 w-4" />
+                            {formData.dateDebut ? format(formData.dateDebut, "PPP") : <span>Choisir une date</span>}
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0" align="start">
+                          <Calendar
+                            mode="single"
+                            selected={formData.dateDebut}
+                            onSelect={(date) => handleDateChange("dateDebut", date)}
+                            initialFocus
+                            className="pointer-events-auto"
+                          />
+                        </PopoverContent>
+                      </Popover>
+                      <Input
+                        type="time"
+                        value={startTime}
+                        onChange={(e) => handleTimeChange("startTime", e.target.value)}
+                        className="w-24"
+                      />
+                    </div>
                   </div>
                   <div className="space-y-2">
-                    <Label>Date de fin</Label>
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <Button
-                          variant="outline"
-                          className={cn(
-                            "w-full justify-start text-left font-normal",
-                            !formData.endDate && "text-muted-foreground"
-                          )}
-                        >
-                          <CalendarIcon className="mr-2 h-4 w-4" />
-                          {formData.endDate ? format(formData.endDate, "PPP") : <span>Choisir une date</span>}
-                        </Button>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0" align="start">
-                        <Calendar
-                          mode="single"
-                          selected={formData.endDate}
-                          onSelect={(date) => handleDateChange("endDate", date)}
-                          initialFocus
-                          className="pointer-events-auto"
-                        />
-                      </PopoverContent>
-                    </Popover>
+                    <Label>Date et heure de fin</Label>
+                    <div className="flex gap-2">
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <Button
+                            variant="outline"
+                            className={cn(
+                              "w-full justify-start text-left font-normal",
+                              !formData.dateFin && "text-muted-foreground"
+                            )}
+                          >
+                            <CalendarIcon className="mr-2 h-4 w-4" />
+                            {formData.dateFin ? format(formData.dateFin, "PPP") : <span>Choisir une date</span>}
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0" align="start">
+                          <Calendar
+                            mode="single"
+                            selected={formData.dateFin}
+                            onSelect={(date) => handleDateChange("dateFin", date)}
+                            initialFocus
+                            className="pointer-events-auto"
+                          />
+                        </PopoverContent>
+                      </Popover>
+                      <Input
+                        type="time"
+                        value={endTime}
+                        onChange={(e) => handleTimeChange("endTime", e.target.value)}
+                        className="w-24"
+                      />
+                    </div>
                   </div>
                   <div className="space-y-2 md:col-span-2 flex items-center">
-                    <Button 
-                      type="button" 
-                      variant={formData.isActive ? "default" : "outline"}
+                    <Button
+                      type="button"
+                      variant={formData.status ? "default" : "outline"}
                       onClick={handleToggleActive}
                       className="mr-4"
                     >
-                      {formData.isActive ? "Actif" : "Inactif"}
+                      {formData.status ? "Actif" : "Inactif"}
                     </Button>
                     <span className="text-sm text-gray-500">
                       Définissez si la publicité doit être active pendant la période définie
@@ -423,13 +559,13 @@ const Advertisements = () => {
               Confirmer la suppression
             </AlertDialogTitle>
             <AlertDialogDescription>
-              Êtes-vous sûr de vouloir supprimer la publicité "{adToDelete?.name}" ? 
+              Êtes-vous sûr de vouloir supprimer la publicité "{adToDelete?.intitule || "Sans titre"}" ?
               Cette action est irréversible.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Annuler</AlertDialogCancel>
-            <AlertDialogAction onClick={() => handleDeleteConfirm(adToDelete?.id)}>
+            <AlertDialogAction onClick={handleDeleteConfirm}>
               Supprimer
             </AlertDialogAction>
           </AlertDialogFooter>

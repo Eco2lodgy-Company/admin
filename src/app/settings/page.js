@@ -74,7 +74,7 @@ const Settings = () => {
           adresse: data.data.adresse || "",
           longitude: data.data.longitude || "",
           latitude: data.data.latitude || "",
-          role: data.data.role || "",
+          role: "Administrateur",
         });
         toast.success("Profil chargé avec succès");
       } catch (err) {
