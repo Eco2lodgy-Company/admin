@@ -118,7 +118,7 @@ export default function UserManagement() {
     };
     
     fetchUsers();
-  }, [setUsers]);
+  }, []);
   // Handle search and filter
   const handleSearch = (e) => {
     const query = e.target.value.toLowerCase();
