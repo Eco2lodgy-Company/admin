@@ -63,12 +63,10 @@ const Advertisements = () => {
     mediaPath: "",
     dateDebut: new Date(),
     dateFin: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
-    status: true,
   });
   const [startTime, setStartTime] = useState("00:00");
   const [endTime, setEndTime] = useState("23:59");
 
-  // Charger les publicités au démarrage
   useEffect(() => {
     const fetchAds = async () => {
       const username = localStorage.getItem("username");
@@ -87,7 +85,8 @@ const Advertisements = () => {
         );
         if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
         const data = await response.json();
-        setAds(data.data || []);
+        const validAds = (data.data || []).filter(ad => ad && ad.id);
+        setAds(validAds);
         toast.success("Publicités chargées avec succès");
       } catch (err) {
         console.error("Error fetching ads:", err.message);
@@ -107,7 +106,6 @@ const Advertisements = () => {
       mediaPath: "",
       dateDebut: new Date(),
       dateFin: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
-      status: true,
     });
     setStartTime("00:00");
     setEndTime("23:59");
@@ -115,6 +113,7 @@ const Advertisements = () => {
   };
 
   const handleEditAd = (ad) => {
+    if (!ad || !ad.id) return;
     const debut = ad.dateDebut ? new Date(ad.dateDebut) : new Date();
     const fin = ad.dateFin ? new Date(ad.dateFin) : new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
     setFormData({
@@ -125,7 +124,6 @@ const Advertisements = () => {
       mediaPath: ad.mediaPath || "",
       dateDebut: debut,
       dateFin: fin,
-      status: ad.status,
     });
     setStartTime(ad.dateDebut ? format(new Date(ad.dateDebut), "HH:mm") : "00:00");
     setEndTime(ad.dateFin ? format(new Date(ad.dateFin), "HH:mm") : "23:59");
@@ -193,11 +191,95 @@ const Advertisements = () => {
     else setEndTime(value);
   };
 
-  const handleToggleActive = () => {
-    setFormData({
-      ...formData,
-      status: !formData.status,
-    });
+  const handleCreateAd = async () => {
+    const token = localStorage.getItem("token");
+    const acteurId = localStorage.getItem("logedUserId") || 2;
+
+    const formDataToSend = new FormData();
+    formDataToSend.append("acteurId", acteurId);
+    formDataToSend.append("intitule", formData.intitule);
+    formDataToSend.append("description", formData.description);
+    if (formData.media) formDataToSend.append("media", formData.media);
+    formDataToSend.append("dateDebut", formData.dateDebut.toISOString());
+    formDataToSend.append("dateFin", formData.dateFin.toISOString());
+
+    console.log("Form data to send (create):", Object.fromEntries(formDataToSend.entries()));
+
+    try {
+      const response = await fetch(`http://195.35.24.128:8081/api/pubs/new`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        body: formDataToSend,
+      });
+      console.log("Response status (create):", response);
+
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(`HTTP error! Status: ${response.status} - ${errorData.message || "Unknown error"}`);
+      }
+      console.log("Response status (create):", response);
+      const data = await response.json();
+      console.log("API response (create):", data);
+      const newAd = data.data;
+
+      if (!newAd || !newAd.id) {
+        throw new Error("La réponse de l'API est invalide ou incomplète");
+      }
+
+      setAds([...ads, newAd]);
+      toast.success("Nouvelle publicité ajoutée avec succès");
+      setIsEditing(false);
+    } catch (err) {
+      console.error("Error creating ad:", err.message);
+      toast.error(`Erreur lors de l'ajout de la publicité: ${err.message}`);
+    }
+  };
+
+  const handleUpdateAd = async () => {
+    const token = localStorage.getItem("token");
+
+    const formDataToSend = new FormData();
+    formDataToSend.append("id", formData.id);
+    formDataToSend.append("intitule", formData.intitule);
+    formDataToSend.append("description", formData.description);
+    if (formData.media) formDataToSend.append("media", formData.media);
+    formDataToSend.append("dateDebut", formData.dateDebut.toISOString());
+    formDataToSend.append("dateFin", formData.dateFin.toISOString());
+
+    console.log("Form data to send (update):", Object.fromEntries(formDataToSend.entries()));
+
+    try {
+      const response = await fetch(`http://195.35.24.128:8081/api/pubs/update/${formData.id}`, {
+        method: "PUT",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        body: formDataToSend,
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(`HTTP error! Status: ${response.status} - ${errorData.message || "Unknown error"}`);
+      }
+
+      const data = await response.json();
+      console.log("API response (update):", data);
+      const updatedAd = data.data;
+
+      if (!updatedAd || !updatedAd.id) {
+        throw new Error("La réponse de l'API est invalide ou incomplète");
+      }
+
+      setAds(ads.map((ad) => (ad.id === updatedAd.id ? updatedAd : ad)));
+      toast.success("Publicité mise à jour avec succès");
+      setIsEditing(false);
+    } catch (err) {
+      console.error("Error updating ad:", err.message);
+      toast.error(`Erreur lors de la mise à jour de la publicité: ${err.message}`);
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -213,64 +295,17 @@ const Advertisements = () => {
       return;
     }
 
-    const token = localStorage.getItem("token");
-    const acteurId = localStorage.getItem("logedUserId") || 2;
-
-    const formDataToSend = new FormData();
-    formDataToSend.append("id", formData.id || null);
-    formDataToSend.append("acteurId", acteurId);
-    formDataToSend.append("intitule", formData.intitule);
-    formDataToSend.append("description", formData.description);
-    if (formData.media) formDataToSend.append("media", formData.media);
-    formDataToSend.append("dateDebut", formData.dateDebut.toISOString());
-    formDataToSend.append("dateFin", formData.dateFin.toISOString());
-    formDataToSend.append("status", formData.status);
-    console.log("Form data to send:", Object.fromEntries(formDataToSend.entries()));
-
-    try {
-      let response;
-      if (formData.id) {
-        response = await fetch(`http://195.35.24.128:8081/api/pubs/update`, {
-          method: "PUT",
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-          body: formDataToSend,
-        });
-      } else {
-        response = await fetch(`http://195.35.24.128:8081/api/pubs/new`, {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-          body: formDataToSend,
-        });
-      }
-
-      if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
-      const data = await response.json();
-      const updatedAd = data.data;
-
-      if (formData.id) {
-        setAds(ads.map((ad) => (ad.id === updatedAd.id ? updatedAd : ad)));
-        toast.success("Publicité mise à jour avec succès");
-      } else {
-        setAds([...ads, updatedAd]);
-        toast.success("Nouvelle publicité ajoutée avec succès");
-      }
-
-      setIsEditing(false);
-    } catch (err) {
-      console.error("Error submitting ad:", err.message);
-      toast.error(
-        `Erreur lors de ${formData.id ? "la mise à jour" : "l'ajout"} de la publicité`
-      );
+    if (formData.id) {
+      await handleUpdateAd();
+    } else {
+      await handleCreateAd();
     }
   };
 
   const isActive = (ad) => {
+    if (!ad || !ad.dateDebut || !ad.dateFin) return false;
     const now = new Date();
-    return ad.status && (!ad.dateDebut || new Date(ad.dateDebut) <= now) && (!ad.dateFin || new Date(ad.dateFin) >= now);
+    return new Date(ad.dateDebut) <= now && new Date(ad.dateFin) >= now;
   };
 
   return (
@@ -286,7 +321,6 @@ const Advertisements = () => {
         </Button>
       </div>
 
-      {/* Carte principale avec tableau des publicités */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
@@ -313,55 +347,57 @@ const Advertisements = () => {
             </TableHeader>
             <TableBody>
               {ads.length > 0 ? (
-                ads.map((ad) => (
-                  <TableRow key={ad?.id}>
-                    <TableCell className="font-medium">{ad?.id}</TableCell>
-                    <TableCell>{ad?.intitule || "-"}</TableCell>
-                    <TableCell className="max-w-[200px] truncate">{ad?.description || "-"}</TableCell>
-                    <TableCell>
-                      <div className="h-10 w-10 rounded-md bg-gray-100 overflow-hidden">
-                        <img
-                          src={ad?.mediaPath ? `http://195.35.24.128:8081${ad?.mediaPath}` : "/placeholder.svg"}
-                          alt={ad?.intitule || "Publicité"}
-                          className="h-full w-full object-cover"
-                          // onError={(e) => (e.target.src = "/placeholder.svg")} // Image par défaut en cas d'erreur
-                        />
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      {ad?.dateDebut ? format(new Date(ad?.dateDebut), "dd/MM/yyyy HH:mm") : "-"}
-                    </TableCell>
-                    <TableCell>
-                      {ad?.dateFin ? format(new Date(ad?.dateFin), "dd/MM/yyyy HH:mm") : "-"}
-                    </TableCell>
-                    <TableCell>
-                      <span
-                        className={cn(
-                          "px-2 py-1 rounded-full text-xs font-medium",
-                          isActive(ad)
-                            ? "bg-green-100 text-green-800"
-                            : "bg-gray-100 text-gray-800"
-                        )}
-                      >
-                        {isActive(ad) ? "Actif" : "Inactif"}
-                      </span>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex justify-end space-x-2">
-                        <Button variant="outline" size="icon" onClick={() => handleEditAd(ad)}>
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="destructive"
-                          size="icon"
-                          onClick={() => setAdToDelete(ad)}
+                ads.map((ad) =>
+                  ad ? (
+                    <TableRow key={ad.id}>
+                      <TableCell className="font-medium">{ad.id}</TableCell>
+                      <TableCell>{ad.intitule || "-"}</TableCell>
+                      <TableCell className="max-w-[200px] truncate">{ad.description || "-"}</TableCell>
+                      <TableCell>
+                        <div className="h-10 w-10 rounded-md bg-gray-100 overflow-hidden">
+                          <img
+                            src={ad.mediaPath ? `http://195.35.24.128:8081${ad.mediaPath}` : "/placeholder.svg"}
+                            alt={ad.intitule || "Publicité"}
+                            className="h-full w-full object-cover"
+                            // onError={(e) => (e.target.src = "/placeholder.svg")}
+                          />
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        {ad.dateDebut ? format(new Date(ad.dateDebut), "dd/MM/yyyy HH:mm") : "-"}
+                      </TableCell>
+                      <TableCell>
+                        {ad.dateFin ? format(new Date(ad.dateFin), "dd/MM/yyyy HH:mm") : "-"}
+                      </TableCell>
+                      <TableCell>
+                        <span
+                          className={cn(
+                            "px-2 py-1 rounded-full text-xs font-medium",
+                            isActive(ad)
+                              ? "bg-green-100 text-green-800"
+                              : "bg-gray-100 text-gray-800"
+                          )}
                         >
-                          <Trash className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))
+                          {isActive(ad) ? "Actif" : "Inactif"}
+                        </span>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex justify-end space-x-2">
+                          <Button variant="outline" size="icon" onClick={() => handleEditAd(ad)}>
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="destructive"
+                            size="icon"
+                            onClick={() => setAdToDelete(ad)}
+                          >
+                            <Trash className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ) : null
+                )
               ) : (
                 <TableRow>
                   <TableCell colSpan={8} className="text-center py-4">
@@ -379,7 +415,6 @@ const Advertisements = () => {
         </CardFooter>
       </Card>
 
-      {/* Overlay et formulaire d'ajout/modification */}
       {isEditing && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <Card className="max-w-2xl w-full">
@@ -425,7 +460,7 @@ const Advertisements = () => {
                           src={`http://195.35.24.128:8081${formData.mediaPath}`}
                           alt="Prévisualisation"
                           className="h-20 w-20 object-cover rounded-md"
-                          onError={(e) => (e.target.src = "/placeholder.svg")}
+                          // onError={(e) => (e.target.src = "/placeholder.svg")}
                         />
                         <p className="text-sm text-gray-500">Image actuelle</p>
                       </div>
@@ -521,19 +556,6 @@ const Advertisements = () => {
                       />
                     </div>
                   </div>
-                  <div className="space-y-2 md:col-span-2 flex items-center">
-                    <Button
-                      type="button"
-                      variant={formData.status ? "default" : "outline"}
-                      onClick={handleToggleActive}
-                      className="mr-4"
-                    >
-                      {formData.status ? "Actif" : "Inactif"}
-                    </Button>
-                    <span className="text-sm text-gray-500">
-                      Définissez si la publicité doit être active pendant la période définie
-                    </span>
-                  </div>
                 </div>
                 <div className="flex justify-end gap-2 pt-4">
                   <Button type="button" variant="outline" onClick={() => setIsEditing(false)}>
@@ -550,7 +572,6 @@ const Advertisements = () => {
         </div>
       )}
 
-      {/* Boîte de dialogue de suppression */}
       <AlertDialog open={adToDelete !== null} onOpenChange={() => setAdToDelete(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>

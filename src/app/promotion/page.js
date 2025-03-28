@@ -1,495 +1,581 @@
-"use client"
-import React, { useState } from 'react';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table";
+"use client";
+import React, { useState, useEffect } from "react";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+  CardFooter,
+} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Percent, Plus, Edit, Trash2, Search, FilterX } from 'lucide-react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import {
+  Plus,
+  Edit,
+  Trash,
+  X,
+  Calendar as CalendarIcon,
+  Percent,
+  Save,
+  AlertTriangle,
+} from "lucide-react";
+import { toast } from "sonner";
+import { format } from "date-fns";
+import { cn } from "@/lib/utils";
 
 const Promotions = () => {
-  // État pour stocker les promotions (simulé pour l'instant)
-  const [promotions, setPromotions] = useState([
-    { 
-      id: 1, 
-      code: "SUMMER2023", 
-      discount: "20%", 
-      startDate: "2023-06-01", 
-      endDate: "2023-08-31", 
-      status: "active", 
-      appliesTo: "Tous les produits",
-      description: "Remise d'été sur tous les produits"
-    },
-    { 
-      id: 2, 
-      code: "BIENVENUE", 
-      discount: "15%", 
-      startDate: "2023-01-01", 
-      endDate: "2023-12-31", 
-      status: "active", 
-      appliesTo: "Première commande",
-      description: "Offre de bienvenue pour les nouveaux clients"
-    },
-    { 
-      id: 3, 
-      code: "FLASH50", 
-      discount: "50%", 
-      startDate: "2023-05-15", 
-      endDate: "2023-05-16", 
-      status: "expired", 
-      appliesTo: "Articles sélectionnés",
-      description: "Vente flash limitée"
-    },
-  ]);
-
-  // État pour gérer le formulaire d'ajout/modification
+  const [promotions, setPromotions] = useState([]);
+  const [isEditing, setIsEditing] = useState(false);
+  const [promoToDelete, setPromoToDelete] = useState(null);
   const [formData, setFormData] = useState({
     id: null,
-    code: "",
-    discount: "",
-    startDate: "",
-    endDate: "",
-    status: "active",
-    appliesTo: "",
-    description: ""
+    intitule: "",
+    description: "",
+    reduction: "",
+    dateDebut: new Date(),
+    dateFin: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+    status: true,
+    acteurId: 2,
   });
+  const [startTime, setStartTime] = useState("00:00");
+  const [endTime, setEndTime] = useState("23:59");
 
-  // État pour gérer si nous sommes en mode édition
-  const [isEditing, setIsEditing] = useState(false);
-  
-  // État pour la recherche
-  const [searchTerm, setSearchTerm] = useState("");
-  
-  // État pour les filtres
-  const [filterStatus, setFilterStatus] = useState("all");
-  
-  // Ouvrir le dialog pour ajouter une promotion
-  const handleAddClick = () => {
-    setFormData({
-      id: null,
-      code: "",
-      discount: "",
-      startDate: "",
-      endDate: "",
-      status: "active",
-      appliesTo: "",
-      description: ""
-    });
-    setIsEditing(false);
+  useEffect(() => {
+    fetchPromotions();
+  }, []);
+
+  const fetchPromotions = async () => {
+    const username = localStorage.getItem("username") || "asaleydiori@gmail.com";
+    const token = localStorage.getItem("token");
+
+    try {
+      const response = await fetch(
+        `http://195.35.24.128:8081/api/promotions/livraison/liste?username=${username}`,
+        {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+      if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
+      const data = await response.json();
+      const validPromos = (data.data || []).filter((promo) => promo && promo.id);
+      setPromotions(validPromos);
+      toast.success("Promotions chargées avec succès");
+    } catch (err) {
+      console.error("Error fetching promotions:", err.message);
+      toast.error("Erreur lors de la récupération des promotions");
+    }
   };
 
-  // Ouvrir le dialog pour modifier une promotion
-  const handleEditClick = (promo) => {
+  const handleAddNewPromo = () => {
     setFormData({
-      ...promo,
-      startDate: promo.startDate,
-      endDate: promo.endDate
+      id: null,
+      intitule: "",
+      description: "",
+      reduction: "",
+      dateDebut: new Date(),
+      dateFin: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+      status: true,
+      acteurId: 2,
     });
+    setStartTime("00:00");
+    setEndTime("23:59");
     setIsEditing(true);
   };
 
-  // Gérer les changements dans le formulaire
+  const handleEditPromo = (promo) => {
+    if (!promo || !promo.id) return;
+    const debut = promo.promotionDateDebut ? new Date(promo.promotionDateDebut) : new Date();
+    const fin = promo.promotionDateFin ? new Date(promo.promotionDateFin) : new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+    setFormData({
+      id: promo.id,
+      intitule: promo.intitule || "",
+      description: promo.description || "",
+      reduction: promo.reduction || "",
+      dateDebut: debut,
+      dateFin: fin,
+      status: promo.promotionStatus ?? true,
+      acteurId: 2,
+    });
+    setStartTime(promo.promotionDateDebut ? format(new Date(promo.promotionDateDebut), "HH:mm") : "00:00");
+    setEndTime(promo.promotionDateFin ? format(new Date(promo.promotionDateFin), "HH:mm") : "23:59");
+    setIsEditing(true);
+  };
+
+  const handleDeleteConfirm = async () => {
+    const token = localStorage.getItem("token");
+
+    try {
+      const response = await fetch(
+        `http://195.35.24.128:8081/api/promotions/livraison/delete/${promoToDelete.id}`,
+        {
+          method: "DELETE",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+      if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
+      setPromotions(promotions.filter((promo) => promo.id !== promoToDelete.id));
+      setPromoToDelete(null);
+      toast.success("Promotion supprimée avec succès");
+    } catch (err) {
+      console.error("Error deleting promotion:", err.message);
+      toast.error("Erreur lors de la suppression de la promotion");
+    }
+  };
+
   const handleFormChange = (e) => {
     const { name, value } = e.target;
     setFormData({
       ...formData,
-      [name]: value
+      [name]: value,
     });
   };
 
-  // Gérer les sélections dans les selects
-  const handleSelectChange = (name, value) => {
+  const handleDateChange = (field, date) => {
+    const time = field === "dateDebut" ? startTime : endTime;
+    const [hours, minutes] = time.split(":");
+    date.setHours(parseInt(hours), parseInt(minutes));
     setFormData({
       ...formData,
-      [name]: value
+      [field]: date,
     });
   };
 
-  // Soumettre le formulaire
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    
-    if (isEditing) {
-      // Mettre à jour une promotion existante
-      const updatedPromotions = promotions.map(promo => 
-        promo.id === formData.id ? formData : promo
-      );
-      setPromotions(updatedPromotions);
-    } else {
-      // Ajouter une nouvelle promotion
-      const newPromo = {
-        ...formData,
-        id: promotions.length > 0 ? Math.max(...promotions.map(p => p.id)) + 1 : 1
-      };
-      setPromotions([...promotions, newPromo]);
-    }
-    
-    // Réinitialiser le formulaire
+  const handleTimeChange = (field, value) => {
+    const [hours, minutes] = value.split(":");
+    const dateField = field === "startTime" ? "dateDebut" : "dateFin";
+    const newDate = new Date(formData[dateField]);
+    newDate.setHours(parseInt(hours), parseInt(minutes));
     setFormData({
-      id: null,
-      code: "",
-      discount: "",
-      startDate: "",
-      endDate: "",
-      status: "active",
-      appliesTo: "",
-      description: ""
+      ...formData,
+      [dateField]: newDate,
     });
-    
-    // Fermer le dialog (le dialog se fermera automatiquement car c'est un component controlled par radix)
+    if (field === "startTime") setStartTime(value);
+    else setEndTime(value);
   };
 
-  // Supprimer une promotion
-  const handleDeletePromo = (id) => {
-    setPromotions(promotions.filter(promo => promo.id !== id));
+  const handleToggleStatus = () => {
+    setFormData({
+      ...formData,
+      status: !formData.status,
+    });
   };
 
-  // Filtrer les promotions selon la recherche et le statut
-  const filteredPromotions = promotions.filter(promo => {
-    const matchesSearch = promo.code.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                         promo.appliesTo.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         promo.description.toLowerCase().includes(searchTerm.toLowerCase());
-    
-    const matchesFilter = filterStatus === "all" || promo.status === filterStatus;
-    
-    return matchesSearch && matchesFilter;
-  });
+  const handleCreatePromo = async () => {
+    const token = localStorage.getItem("token");
+    const body = {
+      intitule: formData.intitule,
+      description: formData.description,
+      reduction: parseInt(formData.reduction, 10),
+      status: formData.status,
+      acteurId: formData.acteurId,
+      dateDebut: formData.dateDebut.toISOString(),
+      dateFin: formData.dateFin.toISOString(),
+    };
+
+    try {
+      const response = await fetch(`http://195.35.24.128:8081/api/promotions/livraison/new`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(body),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(`HTTP error! Status: ${response.status} - ${errorData.message || "Unknown error"}`);
+      }
+
+      const data = await response.json();
+      const newPromo = data.data;
+
+      if (!newPromo || !newPromo.id) {
+        throw new Error("La réponse de l'API est invalide ou incomplète");
+      }
+
+      setPromotions([...promotions, newPromo]);
+      toast.success("Nouvelle promotion ajoutée avec succès");
+      setIsEditing(false);
+    } catch (err) {
+      console.error("Error creating promotion:", err.message);
+      toast.error(`Erreur lors de l'ajout de la promotion: ${err.message}`);
+    }
+  };
+
+  const handleUpdatePromo = async () => {
+    const token = localStorage.getItem("token");
+    const body = {
+      id: formData.id,
+      intitule: formData.intitule,
+      description: formData.description,
+      reduction: parseInt(formData.reduction, 10),
+      status: formData.status,
+      acteurId: formData.acteurId,
+      dateDebut: formData.dateDebut.toISOString(),
+      dateFin: formData.dateFin.toISOString(),
+    };
+console.log("body", body);
+    try {
+      const response = await fetch(`http://195.35.24.128:8081/api/promotions/livraison/update`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(body),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(`HTTP error! Status: ${response.status} - ${errorData.message || "Unknown error"}`);
+      }
+
+      const data = await response.json();
+      const updatedPromo = data.data;
+
+      if (!updatedPromo || !updatedPromo.id) {
+        throw new Error("La réponse de l'API est invalide ou incomplète");
+      }
+
+      setPromotions(promotions.map((promo) => (promo.id === updatedPromo.id ? updatedPromo : promo)));
+      toast.success("Promotion mise à jour avec succès");
+      setIsEditing(false);
+    } catch (err) {
+      console.error("Error updating promotion:", err.message);
+      toast.error(`Erreur lors de la mise à jour de la promotion: ${err.message}`);
+    }
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+
+    if (!formData.intitule || !formData.description || !formData.reduction) {
+      toast.error("Veuillez remplir tous les champs obligatoires (intitulé, description, réduction)");
+      return;
+    }
+
+    if (formData.dateDebut > formData.dateFin) {
+      toast.error("La date de début doit être antérieure à la date de fin");
+      return;
+    }
+
+    if (formData.id) {
+      await handleUpdatePromo();
+    } else {
+      await handleCreatePromo();
+    }
+  };
+
+  const isActive = (promo) => {
+    if (!promo || !promo.promotionDateDebut || !promo.promotionDateFin) return false;
+    const now = new Date();
+    return new Date(promo.promotionDateDebut) <= now && new Date(promo.promotionDateFin) >= now && promo.promotionStatus;
+  };
 
   return (
-    <div className="space-y-6">
+    <div className="container mx-auto py-6 space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Gestion des Promotions</h1>
-          <p className="text-muted-foreground">
-            Créez et gérez les codes promotionnels et les remises pour vos clients.
-          </p>
+          <h1 className="text-2xl font-bold">Gestion des Promotions</h1>
+          <p className="text-gray-500 mt-1">Programmez et gérez vos promotions</p>
         </div>
-        <Dialog>
-          <DialogTrigger asChild>
-            <Button onClick={handleAddClick}>
-              <Plus className="mr-2 h-4 w-4" /> Nouvelle Promotion
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="sm:max-w-[500px]">
-            <DialogHeader>
-              <DialogTitle>{isEditing ? "Modifier la promotion" : "Ajouter une promotion"}</DialogTitle>
-            </DialogHeader>
-            <form onSubmit={handleSubmit} className="grid gap-4 py-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="code">Code</Label>
-                  <Input
-                    id="code"
-                    name="code"
-                    value={formData.code}
-                    onChange={handleFormChange}
-                    placeholder="ex: SUMMER2023"
-                    required
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="discount">Remise</Label>
-                  <Input
-                    id="discount"
-                    name="discount"
-                    value={formData.discount}
-                    onChange={handleFormChange}
-                    placeholder="ex: 20%"
-                    required
-                  />
-                </div>
-              </div>
-              
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="startDate">Date de début</Label>
-                  <Input
-                    id="startDate"
-                    name="startDate"
-                    type="date"
-                    value={formData.startDate}
-                    onChange={handleFormChange}
-                    required
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="endDate">Date de fin</Label>
-                  <Input
-                    id="endDate"
-                    name="endDate"
-                    type="date"
-                    value={formData.endDate}
-                    onChange={handleFormChange}
-                    required
-                  />
-                </div>
-              </div>
-              
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="status">Statut</Label>
-                  <Select 
-                    value={formData.status} 
-                    onValueChange={(value) => handleSelectChange("status", value)}
-                  >
-                    <SelectTrigger id="status">
-                      <SelectValue placeholder="Sélectionner un statut" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="active">Actif</SelectItem>
-                      <SelectItem value="scheduled">Programmé</SelectItem>
-                      <SelectItem value="expired">Expiré</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="appliesTo">Applicable à</Label>
-                  <Input
-                    id="appliesTo"
-                    name="appliesTo"
-                    value={formData.appliesTo}
-                    onChange={handleFormChange}
-                    placeholder="ex: Tous les produits"
-                    required
-                  />
-                </div>
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="description">Description</Label>
-                <Textarea
-                  id="description"
-                  name="description"
-                  value={formData.description}
-                  onChange={handleFormChange}
-                  placeholder="Description de la promotion"
-                  rows={3}
-                />
-              </div>
-              
-              <DialogFooter>
-                <Button type="submit">{isEditing ? "Mettre à jour" : "Ajouter"}</Button>
-              </DialogFooter>
-            </form>
-          </DialogContent>
-        </Dialog>
+        <Button onClick={handleAddNewPromo} className="flex items-center gap-2">
+          <Plus size={16} />
+          <span>Ajouter une promotion</span>
+        </Button>
       </div>
 
-      <div className="flex flex-col md:flex-row gap-4 mb-6">
-        <div className="relative flex-1">
-          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Rechercher des promotions..."
-            className="pl-8"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
-        </div>
-        <Select 
-          value={filterStatus} 
-          onValueChange={setFilterStatus}
-        >
-          <SelectTrigger className="w-full md:w-[180px]">
-            <FilterX className="mr-2 h-4 w-4" />
-            <SelectValue placeholder="Filtrer par" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Tous les statuts</SelectItem>
-            <SelectItem value="active">Actif</SelectItem>
-            <SelectItem value="scheduled">Programmé</SelectItem>
-            <SelectItem value="expired">Expiré</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Percent className="h-5 w-5" />
+            <span>Promotions</span>
+          </CardTitle>
+          <CardDescription>
+            Toutes vos promotions passées, présentes et futures
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>ID</TableHead>
+                <TableHead>Intitulé</TableHead>
+                <TableHead>Description</TableHead>
+                <TableHead>Réduction</TableHead>
+                <TableHead>Date de début</TableHead>
+                <TableHead>Date de fin</TableHead>
+                <TableHead>Statut</TableHead>
+                <TableHead className="text-right">Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {promotions.length > 0 ? (
+                promotions.map((promo) =>
+                  promo ? (
+                    <TableRow key={promo.id}>
+                      <TableCell className="font-medium">{promo.id}</TableCell>
+                      <TableCell>{promo.intitule || "-"}</TableCell>
+                      <TableCell className="max-w-[200px] truncate">{promo.description || "-"}</TableCell>
+                      <TableCell>{promo.reduction ? `${promo.reduction}%` : "-"}</TableCell>
+                      <TableCell>
+                        {promo.promotionDateDebut ? format(new Date(promo.promotionDateDebut), "dd/MM/yyyy HH:mm") : "-"}
+                      </TableCell>
+                      <TableCell>
+                        {promo.promotionDateFin ? format(new Date(promo.promotionDateFin), "dd/MM/yyyy HH:mm") : "-"}
+                      </TableCell>
+                      <TableCell>
+                        <span
+                          className={cn(
+                            "px-2 py-1 rounded-full text-xs font-medium",
+                            isActive(promo)
+                              ? "bg-green-100 text-green-800"
+                              : "bg-gray-100 text-gray-800"
+                          )}
+                        >
+                          {isActive(promo) ? "Actif" : "Inactif"}
+                        </span>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex justify-end space-x-2">
+                          <Button variant="outline" size="icon" onClick={() => handleEditPromo(promo)}>
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="destructive"
+                            size="icon"
+                            onClick={() => setPromoToDelete(promo)}
+                          >
+                            <Trash className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ) : null
+                )
+              ) : (
+                <TableRow>
+                  <TableCell colSpan={8} className="text-center py-4">
+                    Aucune promotion définie
+                  </TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
+        </CardContent>
+        <CardFooter className="border-t py-4 bg-gray-50">
+          <div className="text-sm text-gray-500">
+            {promotions.length} promotions configurées
+          </div>
+        </CardFooter>
+      </Card>
 
-      <Tabs defaultValue="active" className="w-full">
-        <TabsList>
-          <TabsTrigger value="active">Actives</TabsTrigger>
-          <TabsTrigger value="scheduled">Programmées</TabsTrigger>
-          <TabsTrigger value="expired">Expirées</TabsTrigger>
-        </TabsList>
-        
-        <TabsContent value="active" className="space-y-4">
-          {filteredPromotions.filter(promo => promo.status === 'active').length > 0 ? (
-            <div className="rounded-md border">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Code</TableHead>
-                    <TableHead>Remise</TableHead>
-                    <TableHead>Période</TableHead>
-                    <TableHead>Applicable à</TableHead>
-                    <TableHead>Statut</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredPromotions.filter(promo => promo.status === 'active').map((promotion) => (
-                    <TableRow key={promotion.id}>
-                      <TableCell className="font-medium">{promotion.code}</TableCell>
-                      <TableCell>{promotion.discount}</TableCell>
-                      <TableCell>
-                        {new Date(promotion.startDate).toLocaleDateString()} - {new Date(promotion.endDate).toLocaleDateString()}
-                      </TableCell>
-                      <TableCell>{promotion.appliesTo}</TableCell>
-                      <TableCell>
-                        <Badge className="bg-green-500">{promotion.status}</Badge>
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <Dialog>
-                          <DialogTrigger asChild>
-                            <Button variant="ghost" size="icon" onClick={() => handleEditClick(promotion)}>
-                              <Edit className="h-4 w-4" />
-                            </Button>
-                          </DialogTrigger>
-                          <DialogContent className="sm:max-w-[500px]">
-                            {/* Le contenu du dialogue est le même que pour l'ajout - React le remplacera automatiquement */}
-                          </DialogContent>
-                        </Dialog>
-                        <Button variant="ghost" size="icon" onClick={() => handleDeletePromo(promotion.id)}>
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-          ) : (
-            <div className="flex h-40 items-center justify-center rounded-md border border-dashed">
-              <div className="text-center">
-                <Percent className="mx-auto h-10 w-10 text-muted-foreground" />
-                <h3 className="mt-2 text-lg font-medium">Aucune promotion active</h3>
-                <p className="mt-1 text-sm text-muted-foreground">
-                  Les promotions actives apparaîtront ici.
-                </p>
-              </div>
-            </div>
-          )}
-        </TabsContent>
-        
-        <TabsContent value="scheduled" className="space-y-4">
-          {filteredPromotions.filter(promo => promo.status === 'scheduled').length > 0 ? (
-            <div className="rounded-md border">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Code</TableHead>
-                    <TableHead>Remise</TableHead>
-                    <TableHead>Période</TableHead>
-                    <TableHead>Applicable à</TableHead>
-                    <TableHead>Statut</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredPromotions.filter(promo => promo.status === 'scheduled').map((promotion) => (
-                    <TableRow key={promotion.id}>
-                      <TableCell className="font-medium">{promotion.code}</TableCell>
-                      <TableCell>{promotion.discount}</TableCell>
-                      <TableCell>
-                        {new Date(promotion.startDate).toLocaleDateString()} - {new Date(promotion.endDate).toLocaleDateString()}
-                      </TableCell>
-                      <TableCell>{promotion.appliesTo}</TableCell>
-                      <TableCell>
-                        <Badge variant="outline" className="text-blue-500 border-blue-200 bg-blue-50">{promotion.status}</Badge>
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <Dialog>
-                          <DialogTrigger asChild>
-                            <Button variant="ghost" size="icon" onClick={() => handleEditClick(promotion)}>
-                              <Edit className="h-4 w-4" />
-                            </Button>
-                          </DialogTrigger>
-                          <DialogContent className="sm:max-w-[500px]">
-                            {/* Le contenu du dialogue est le même que pour l'ajout */}
-                          </DialogContent>
-                        </Dialog>
-                        <Button variant="ghost" size="icon" onClick={() => handleDeletePromo(promotion.id)}>
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-          ) : (
-            <div className="flex h-40 items-center justify-center rounded-md border border-dashed">
-              <div className="text-center">
-                <Percent className="mx-auto h-10 w-10 text-muted-foreground" />
-                <h3 className="mt-2 text-lg font-medium">Aucune promotion programmée</h3>
-                <p className="mt-1 text-sm text-muted-foreground">
-                  Créez une nouvelle promotion pour qu'elle apparaisse ici.
-                </p>
-              </div>
-            </div>
-          )}
-        </TabsContent>
-        
-        <TabsContent value="expired" className="space-y-4">
-          {filteredPromotions.filter(promo => promo.status === 'expired').length > 0 ? (
-            <div className="rounded-md border">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Code</TableHead>
-                    <TableHead>Remise</TableHead>
-                    <TableHead>Période</TableHead>
-                    <TableHead>Applicable à</TableHead>
-                    <TableHead>Statut</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredPromotions.filter(promo => promo.status === 'expired').map((promotion) => (
-                    <TableRow key={promotion.id}>
-                      <TableCell className="font-medium">{promotion.code}</TableCell>
-                      <TableCell>{promotion.discount}</TableCell>
-                      <TableCell>
-                        {new Date(promotion.startDate).toLocaleDateString()} - {new Date(promotion.endDate).toLocaleDateString()}
-                      </TableCell>
-                      <TableCell>{promotion.appliesTo}</TableCell>
-                      <TableCell>
-                        <Badge variant="outline" className="text-red-500 border-red-200 bg-red-50">{promotion.status}</Badge>
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <Dialog>
-                          <DialogTrigger asChild>
-                            <Button variant="ghost" size="icon" onClick={() => handleEditClick(promotion)}>
-                              <Edit className="h-4 w-4" />
-                            </Button>
-                          </DialogTrigger>
-                          <DialogContent className="sm:max-w-[500px]">
-                            {/* Le contenu du dialogue est le même que pour l'ajout */}
-                          </DialogContent>
-                        </Dialog>
-                        <Button variant="ghost" size="icon" onClick={() => handleDeletePromo(promotion.id)}>
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-          ) : (
-            <div className="flex h-40 items-center justify-center rounded-md border border-dashed">
-              <div className="text-center">
-                <Percent className="mx-auto h-10 w-10 text-muted-foreground" />
-                <h3 className="mt-2 text-lg font-medium">Aucune promotion expirée</h3>
-                <p className="mt-1 text-sm text-muted-foreground">
-                  Les promotions expirées apparaîtront ici.
-                </p>
-              </div>
-            </div>
-          )}
-        </TabsContent>
-      </Tabs>
+      {isEditing && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <Card className="max-w-2xl w-full">
+            <CardHeader>
+              <CardTitle className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Percent size={20} />
+                  <span>{formData.id ? "Modifier la promotion" : "Ajouter une nouvelle promotion"}</span>
+                </div>
+                <Button variant="ghost" size="icon" onClick={() => setIsEditing(false)}>
+                  <X size={18} />
+                </Button>
+              </CardTitle>
+              <CardDescription>
+                Configurez les détails et la durée de votre promotion
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <form onSubmit={handleSubmit} className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="intitule">Intitulé</Label>
+                    <Input
+                      id="intitule"
+                      name="intitule"
+                      placeholder="ex: SUMMER2025"
+                      value={formData.intitule}
+                      onChange={handleFormChange}
+                      required
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="reduction">Réduction (%)</Label>
+                    <Input
+                      id="reduction"
+                      name="reduction"
+                      type="number"
+                      placeholder="ex: 15"
+                      value={formData.reduction}
+                      onChange={handleFormChange}
+                      required
+                    />
+                  </div>
+                  <div className="space-y-2 md:col-span-2">
+                    <Label htmlFor="description">Description</Label>
+                    <Textarea
+                      id="description"
+                      name="description"
+                      placeholder="Décrivez votre promotion"
+                      value={formData.description}
+                      onChange={handleFormChange}
+                      rows={3}
+                      required
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Date et heure de début</Label>
+                    <div className="flex gap-2">
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <Button
+                            variant="outline"
+                            className={cn(
+                              "w-full justify-start text-left font-normal",
+                              !formData.dateDebut && "text-muted-foreground"
+                            )}
+                          >
+                            <CalendarIcon className="mr-2 h-4 w-4" />
+                            {formData.dateDebut ? format(formData.dateDebut, "PPP") : <span>Choisir une date</span>}
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0" align="start">
+                          <Calendar
+                            mode="single"
+                            selected={formData.dateDebut}
+                            onSelect={(date) => handleDateChange("dateDebut", date)}
+                            initialFocus
+                            className="pointer-events-auto"
+                          />
+                        </PopoverContent>
+                      </Popover>
+                      <Input
+                        type="time"
+                        value={startTime}
+                        onChange={(e) => handleTimeChange("startTime", e.target.value)}
+                        className="w-24"
+                      />
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Date et heure de fin</Label>
+                    <div className="flex gap-2">
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <Button
+                            variant="outline"
+                            className={cn(
+                              "w-full justify-start text-left font-normal",
+                              !formData.dateFin && "text-muted-foreground"
+                            )}
+                          >
+                            <CalendarIcon className="mr-2 h-4 w-4" />
+                            {formData.dateFin ? format(formData.dateFin, "PPP") : <span>Choisir une date</span>}
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0" align="start">
+                          <Calendar
+                            mode="single"
+                            selected={formData.dateFin}
+                            onSelect={(date) => handleDateChange("dateFin", date)}
+                            initialFocus
+                            className="pointer-events-auto"
+                          />
+                        </PopoverContent>
+                      </Popover>
+                      <Input
+                        type="time"
+                        value={endTime}
+                        onChange={(e) => handleTimeChange("endTime", e.target.value)}
+                        className="w-24"
+                      />
+                    </div>
+                  </div>
+                  <div className="space-y-2 md:col-span-2 flex items-center">
+                    <Button
+                      type="button"
+                      variant={formData.status ? "default" : "outline"}
+                      onClick={handleToggleStatus}
+                      className="mr-4"
+                    >
+                      {formData.status ? "Actif" : "Inactif"}
+                    </Button>
+                    <span className="text-sm text-gray-500">
+                      Définissez si la promotion doit être active pendant la période définie
+                    </span>
+                  </div>
+                </div>
+                <div className="flex justify-end gap-2 pt-4">
+                  <Button type="button" variant="outline" onClick={() => setIsEditing(false)}>
+                    Annuler
+                  </Button>
+                  <Button type="submit" className="flex items-center gap-2">
+                    <Save size={16} />
+                    {formData.id ? "Mettre à jour" : "Ajouter"}
+                  </Button>
+                </div>
+              </form>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
+      <AlertDialog open={promoToDelete !== null} onOpenChange={() => setPromoToDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5 text-destructive" />
+              Confirmer la suppression
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              Êtes-vous sûr de vouloir supprimer la promotion "{promoToDelete?.intitule || "Sans titre"}" ?
+              Cette action est irréversible.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Annuler</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDeleteConfirm}>
+              Supprimer
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
