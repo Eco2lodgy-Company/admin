@@ -56,6 +56,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { set } from "date-fns";
 
 export default function CategoryManagement() {
   const [categories, setCategories] = useState([]);
@@ -134,7 +135,7 @@ export default function CategoryManagement() {
 
     fetchCategories();
     fetchShops();
-  }, [categories]);
+  }, [setCategories]);
 
   const handleSearch = (e) => {
     const query = e.target.value.toLowerCase();

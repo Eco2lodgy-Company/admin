@@ -95,7 +95,7 @@ const Advertisements = () => {
     };
 
     fetchAds();
-  }, []);
+  }, [setAds]);
 
   const handleAddNewAd = () => {
     setFormData({

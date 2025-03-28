@@ -75,7 +75,7 @@ const FAQ = () => {
     };
 
     fetchFAQs();
-  }, [faqs]);
+  }, [setFaqs]);
 
   // Filtrer les FAQs en fonction de la recherche
   const filteredFaqs = faqs.filter(

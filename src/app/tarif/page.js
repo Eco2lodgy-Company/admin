@@ -89,7 +89,7 @@ const RidePricing = () => {
     };
 
     fetchPrices();
-  }, []);
+  }, [setPrices]);
 
   const handleAddNewPrice = () => {
     setFormData({

@@ -58,6 +58,7 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
+import { set } from "date-fns";
 
 export default function UserManagement() {
   const [users, setUsers] = useState([]);
@@ -117,7 +118,7 @@ export default function UserManagement() {
     };
     
     fetchUsers();
-  }, [users]);
+  }, [setUsers]);
   // Handle search and filter
   const handleSearch = (e) => {
     const query = e.target.value.toLowerCase();

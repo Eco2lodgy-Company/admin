@@ -572,7 +572,7 @@ const ProductManagement = () => {
     fetchProducts();
     fetchCategories();
     fetchShops();
-  }, []);
+  }, [setProducts]);
 
   const filteredProductsList = products.filter((product) =>
     product?.libelle?.toLowerCase().includes(searchQuery.toLowerCase()) ||

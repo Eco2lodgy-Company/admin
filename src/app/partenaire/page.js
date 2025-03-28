@@ -84,7 +84,7 @@ const Partners = () => {
     };
 
     fetchPartners();
-  }, []);
+  }, [setPartners]);
 
   const filteredPartners = partners.filter(
     (partner) =>

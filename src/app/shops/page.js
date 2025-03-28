@@ -136,7 +136,7 @@ export default function ShopManagement() {
 
     fetchShops();
     fetchUsers();
-  }, []);
+  }, [setShops]);
 
   const handleSearch = (e) => {
     const query = e.target.value.toLowerCase();

@@ -69,7 +69,7 @@ const Promotions = () => {
 
   useEffect(() => {
     fetchPromotions();
-  }, []);
+  }, [setPromotions]);
 
   const fetchPromotions = async () => {
     const username = localStorage.getItem("username") || "asaleydiori@gmail.com";
