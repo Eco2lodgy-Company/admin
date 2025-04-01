@@ -85,12 +85,12 @@ export default function DeliveryManagement() {
     moyenDeplacement: "",
   });
 
-  // Charger les données depuis les APIs
-  useEffect(() => {
-    const username = localStorage.getItem("username");
-    const token = localStorage.getItem("token");
+
+  ;
 
     const fetchDeliverers = async () => {
+      const username = localStorage.getItem("username");
+    const token = localStorage.getItem("token")
       try {
         const response = await fetch(
           `http://195.35.24.128:8081/api/livreurs/liste?username=${username}`,
@@ -115,6 +115,8 @@ export default function DeliveryManagement() {
     };
 
     const fetchUsers = async () => {
+      const username = localStorage.getItem("username");
+    const token = localStorage.getItem("token")
       try {
         const response = await fetch(
           `http://195.35.24.128:8081/api/user/liste?username=${username}`,
@@ -138,6 +140,8 @@ export default function DeliveryManagement() {
     };
 
     const fetchOrders = async () => {
+      const username = localStorage.getItem("username");
+    const token = localStorage.getItem("token")
       try {
         const response = await fetch(
           `http://195.35.24.128:8081/api/paniers/admin/liste?username=${username}`,
@@ -161,6 +165,9 @@ export default function DeliveryManagement() {
         toast.error("Erreur lors de la récupération des paniers");
       }
     };
+  // Charger les données depuis les APIs
+  useEffect(() => {
+    
 
     fetchDeliverers();
     fetchUsers();
@@ -227,9 +234,11 @@ export default function DeliveryManagement() {
       setNewDeliverer({ livreurUserId: "", moyenDeplacement: "" });
       setShowAddDeliverer(false);
       toast.success(data.message);
+      await fetchDeliverers();
     } catch (err) {
       console.error("Error adding deliverer:", err.message);
       toast.error("Erreur lors de l'ajout du livreur");
+      await fetchDeliverers();
     }
   };
 
@@ -275,9 +284,11 @@ console.log("Deliverer data to update:", delivererData);
       // );
       setShowEditDeliverer(false);
       toast.success(data.message);
+      await fetchDeliverers();
     } catch (err) {
       console.error("Error updating deliverer:", err.message);
       toast.error("Erreur lors de la modification du livreur");
+      await fetchDeliverers();
     }
   };
 
@@ -303,9 +314,11 @@ console.log("Deliverer data to update:", delivererData);
       setShowDeleteDeliverer(false);
       const data = await response.json();
       toast.success(data.message);
+      await fetchDeliverers(); // Recharger la liste des livreurs après suppression
     } catch (err) {
       console.error("Error deleting deliverer:", err.message);
       toast.error("Erreur lors de la suppression du livreur");
+      await fetchDeliverers();
     }
   };
 
@@ -520,7 +533,7 @@ console.log("Deliverer data to update:", delivererData);
                   <TableBody>
                     {filteredDeliverers.length > 0 ? (
                       filteredDeliverers.map((deliverer) => (
-                        <TableRow key={deliverer.id}>
+                        <TableRow key={deliverer?.id}>
                           <TableCell className="font-medium">
                             {deliverer?.prenom} {deliverer?.nom}
                           </TableCell>

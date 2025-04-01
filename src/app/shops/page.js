@@ -78,11 +78,11 @@ export default function ShopManagement() {
     acteurId: 0,
   });
 
-  useEffect(() => {
-    const username = localStorage.getItem("username");
-    const token = localStorage.getItem("token");
+
 
     const fetchShops = async () => {
+      const username = localStorage.getItem("username");
+      const token = localStorage.getItem("token");
       try {
         const response = await fetch(
           `http://195.35.24.128:8081/api/shop/liste?username=${username}`,
@@ -102,7 +102,6 @@ export default function ShopManagement() {
         const data = await response.json();
         setShops(data.data);
         setFilteredShops(data.data);
-        toast.success(data.message);
       } catch (err) {
         console.error("Error fetching shops:", err.message);
         toast.error("Erreur lors de la récupération des boutiques");
@@ -110,6 +109,8 @@ export default function ShopManagement() {
     };
 
     const fetchUsers = async () => {
+      const username = localStorage.getItem("username");
+      const token = localStorage.getItem("token");
       try {
         const response = await fetch(
           `http://195.35.24.128:8081/api/user/liste?username=${username}`,
@@ -134,6 +135,7 @@ export default function ShopManagement() {
       }
     };
 
+  useEffect(() => {
     fetchShops();
     fetchUsers();
   }, [setShops]);
@@ -212,9 +214,11 @@ export default function ShopManagement() {
         acteurId: 0,
       });
       toast.success(data.message);
+      fetchShops();
     } catch (err) {
       console.error("Error adding shop:", err.message);
       toast.error("Erreur lors de l'ajout de la boutique");
+      fetchShops();
     }
   };
 
@@ -263,9 +267,11 @@ console.log(currentShop.id)
       setIsEditShopOpen(false);
       setCurrentShop(null);
       toast.success(data.message);
+      fetchShops();
     } catch (err) {
       console.error("Error updating shop:", err.message);
       toast.error("Erreur lors de la mise à jour de la boutique");
+      fetchShops();
     }
   };
 
@@ -299,9 +305,11 @@ console.log(currentShop.id)
       setIsDeleteShopOpen(false);
       setCurrentShop(null);
       toast.success("Boutique supprimée avec succès");
+      fetchShops();
     } catch (err) {
       console.error("Error deleting shop:", err.message);
       toast.error("Erreur lors de la suppression de la boutique");
+      fetchShops();
     }
   };
 

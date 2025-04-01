@@ -66,36 +66,35 @@ const Advertisements = () => {
   });
   const [startTime, setStartTime] = useState("00:00");
   const [endTime, setEndTime] = useState("23:59");
+  const fetchAds = async () => {
+    
 
-  useEffect(() => {
-    const fetchAds = async () => {
+    try {
       const username = localStorage.getItem("username");
-      const token = localStorage.getItem("token");
-
-      try {
-        const response = await fetch(
-          `http://195.35.24.128:8081/api/pubs/liste?username=${username}`,
-          {
-            method: "GET",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
-        if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
-        const data = await response.json();
-        const validAds = (data.data || []).filter(ad => ad && ad.id);
-        setAds(validAds);
-        toast.success("Publicités chargées avec succès");
-      } catch (err) {
-        console.error("Error fetching ads:", err.message);
-        toast.error("Erreur lors de la récupération des publicités");
-      }
-    };
-
+    const token = localStorage.getItem("token");
+      const response = await fetch(
+        `http://195.35.24.128:8081/api/pubs/liste?username=${username}`,
+        {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+      if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
+      const data = await response.json();
+      const validAds = (data.data || []).filter(ad => ad && ad.id);
+      setAds(validAds);
+      toast.success("Publicités chargées avec succès");
+    } catch (err) {
+      console.error("Error fetching ads:", err.message);
+      toast.error("Erreur lors de la récupération des publicités");
+    }
+  };
+  useEffect(() => {
     fetchAds();
-  }, [setAds]);
+  }, []);
 
   const handleAddNewAd = () => {
     setFormData({
@@ -147,9 +146,11 @@ const Advertisements = () => {
       setAds(ads.filter((ad) => ad.id !== adToDelete.id));
       setAdToDelete(null);
       toast.success("Publicité supprimée avec succès");
+      fetchAds();
     } catch (err) {
       console.error("Error deleting ad:", err.message);
       toast.error("Erreur lors de la suppression de la publicité");
+      fetchAds();
     }
   };
 
@@ -225,9 +226,11 @@ const Advertisements = () => {
       setAds([...ads, newAd]);
       toast.success(data.message);
       setIsEditing(false);
+      fetchAds();
     } catch (err) {
       console.error("Error creating ad:", err.message);
       toast.error(`Erreur lors de l'ajout de la publicité: ${err.message}`);
+      fetchAds();
     }
   };
 
@@ -265,12 +268,14 @@ const Advertisements = () => {
       console.log("API response (update):", data);
       const updatedAd = data.data;
 
-      setAds(ads.map((ad) => (ad.id === updatedAd.id ? updatedAd : ad)));
+      // setAds(ads.map((ad) => (ad.id === updatedAd.id ? updatedAd : ad)));
       toast.success(data.message);
       setIsEditing(false);
+      fetchAds();
     } catch (err) {
       console.error("Error updating ad:", err.message);
       toast.error(`Erreur lors de la mise à jour de la publicité: ${err.message}`);
+      fetchAds();
     }
   };
 
@@ -330,7 +335,7 @@ const Advertisements = () => {
                 <TableHead>ID</TableHead>
                 <TableHead>Intitulé</TableHead>
                 <TableHead>Description</TableHead>
-                <TableHead>Image</TableHead>
+                {/* <TableHead>Image</TableHead> */}
                 <TableHead>Date de début</TableHead>
                 <TableHead>Date de fin</TableHead>
                 <TableHead>Statut</TableHead>
@@ -345,7 +350,7 @@ const Advertisements = () => {
                       <TableCell className="font-medium">{ad.id}</TableCell>
                       <TableCell>{ad.intitule || "-"}</TableCell>
                       <TableCell className="max-w-[200px] truncate">{ad.description || "-"}</TableCell>
-                      <TableCell>
+                      {/* <TableCell>
                         <div className="h-10 w-10 rounded-md bg-gray-100 overflow-hidden">
                           <img
                             src={ad.mediaPath ? `http://195.35.24.128:8081${ad.mediaPath}` : "/placeholder.svg"}
@@ -354,7 +359,7 @@ const Advertisements = () => {
                             // onError={(e) => (e.target.src = "/placeholder.svg")}
                           />
                         </div>
-                      </TableCell>
+                      </TableCell> */}
                       <TableCell>
                         {ad.dateDebut ? format(new Date(ad.dateDebut), "dd/MM/yyyy HH:mm") : "-"}
                       </TableCell>

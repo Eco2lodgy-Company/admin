@@ -50,41 +50,40 @@ const Partners = () => {
   });
 
   // Fetch partners from the API
-  useEffect(() => {
+ 
+  
+  const fetchPartners = async () => {
     const token = localStorage.getItem("token");
     const id = localStorage.getItem("username");
-    console.log("Token:", token);
-    console.log("id:", id);
-
-    const fetchPartners = async () => {
-      try {
-        const response = await fetch(
-          `http://195.35.24.128:8081/api/partenaires/liste?username=${id}`,
-          {
-            method: "GET",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
-
-        if (!response.ok) {
-          throw new Error(`HTTP error! Status: ${response.status}`);
+   
+    try {
+      const response = await fetch(
+        `http://195.35.24.128:8081/api/partenaires/liste?username=${id}`,
+        {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
         }
+      );
 
-        const data = await response.json();
-        setPartners(data.data || []);
-        console.log("Partners fetched:", data.data);
-        toast.success(data.message);
-      } catch (err) {
-        console.error("Error fetching partners:", err.message);
-        toast.error("Erreur lors de la récupération des partenaires");
+      if (!response.ok) {
+        throw new Error(`HTTP error! Status: ${response.status}`);
       }
-    };
 
-    fetchPartners();
-  }, [setPartners]);
+      const data = await response.json();
+      setPartners(data.data || []);
+      console.log("Partners fetched:", data.data);
+      // toast.success(data.message);
+    } catch (err) {
+      console.error("Error fetching partners:", err.message);
+      toast.error("Erreur lors de la récupération des partenaires");
+    }
+  };
+  useEffect(() => {
+       fetchPartners();
+  }, []);
 
   const filteredPartners = partners.filter(
     (partner) =>
@@ -115,9 +114,11 @@ const Partners = () => {
 
       setPartners(partners.filter((partner) => partner.id !== id));
       toast.success("Partenaire supprimé avec succès");
+      fetchPartners();
     } catch (err) {
       console.error("Error deleting partner:", err.message);
       toast.error("Erreur lors de la suppression du partenaire");
+      fetchPartners();
     }
   };
 
@@ -212,9 +213,11 @@ const Partners = () => {
       setPartners([...partners, data.data]);
       toast.success(data.message);
       setShowAddForm(false);
+      fetchPartners();
     } catch (err) {
       console.error("Error adding partner:", err.message);
       toast.error("Erreur lors de l'ajout du partenaire");
+      fetchPartners();
     }
   };
 
@@ -264,9 +267,11 @@ const Partners = () => {
       setPartners(updatedPartners);
       toast.success(data.message);
       setShowEditForm(false);
+      fetchPartners();
     } catch (err) {
       console.error("Error updating partner:", err.message);
       toast.error("Erreur lors de la mise à jour du partenaire");
+      fetchPartners();
     }
   };
 

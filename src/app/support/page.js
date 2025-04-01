@@ -50,7 +50,7 @@ const SupportTickets = () => {
     };
 
     fetchFeedbacks();
-  }, [setFeedbacks]);
+  }, []);
 
   // Filtrer les feedbacks en fonction de la recherche
   const filteredFeedbacks = feedbacks.filter(

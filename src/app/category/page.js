@@ -77,11 +77,11 @@ export default function CategoryManagement() {
     acteurUsername: "",
   });
 
-  useEffect(() => {
-    const username = localStorage.getItem("username");
-    const token = localStorage.getItem("token");
+  
 
     const fetchCategories = async () => {
+      const username = localStorage.getItem("username");
+    const token = localStorage.getItem("token");
       try {
         const response = await fetch(
           `http://195.35.24.128:8081/api/productCategories/liste?username=${username}`,
@@ -101,7 +101,7 @@ export default function CategoryManagement() {
         const data = await response.json();
         setCategories(data.data);
         setFilteredCategories(data.data);
-        toast.success("Catégories chargées avec succès");
+        // toast.success("Catégories chargées avec succès");
       } catch (err) {
         console.error("Error fetching categories:", err.message);
         toast.error("Erreur lors de la récupération des catégories");
@@ -109,6 +109,8 @@ export default function CategoryManagement() {
     };
 
     const fetchShops = async () => {
+      const username = localStorage.getItem("username");
+    const token = localStorage.getItem("token");
       try {
         const response = await fetch(
           `http://195.35.24.128:8081/api/shop/liste?username=${username}`,
@@ -126,13 +128,14 @@ export default function CategoryManagement() {
 
         const data = await response.json();
         setShops(data.data);
-        toast.success(data.message);
+        // toast.success(data.message);
       } catch (err) {
         console.error("Error fetching shops:", err.message);
         toast.error("Erreur lors de la récupération des boutiques");
       }
     };
 
+  useEffect(() => {
     fetchCategories();
     fetchShops();
   }, [setCategories]);
@@ -188,9 +191,11 @@ export default function CategoryManagement() {
         acteurUsername: "",
       });
       toast.success(data.message);
+      fetchCategories();
     } catch (err) {
       console.error("Error adding category:", err.message);
       toast.error("Erreur lors de l'ajout de la catégorie");
+      fetchCategories();
     }
   };
 
@@ -235,9 +240,11 @@ export default function CategoryManagement() {
       setIsEditCategoryOpen(false);
       setCurrentCategory(null);
       toast.success(data.message);
+      fetchCategories();
     } catch (err) {
       console.error("Error updating category:", err.message);
       toast.error("Erreur lors de la mise à jour de la catégorie");
+      fetchCategories();
     }
   };
 
@@ -274,9 +281,11 @@ export default function CategoryManagement() {
       toast.success(data.message);
       setIsDeleteCategoryOpen(false);
       setCurrentCategory(null);
+      fetchCategories();
     } catch (err) {
       console.error("Error deleting category:", err.message);
       toast.error("Erreur lors de la suppression de la catégorie");
+      fetchCategories();
     }
   };
 
@@ -313,9 +322,11 @@ export default function CategoryManagement() {
       setIsActivateCategoryOpen(false);
       setCurrentCategory(null);
       toast.success(data.message);
+      fetchCategories();
     } catch (err) {
       console.error("Error activating category:", err.message);
       toast.error("Erreur lors de l'activation de la catégorie");
+      fetchCategories();
     }
   };
 
@@ -352,9 +363,11 @@ console.log(response);
       setIsDeactivateCategoryOpen(false);
       setCurrentCategory(null);
       toast.success(data.message);
+      fetchCategories();
     } catch (err) {
       console.error("Error deactivating category:", err.message);
       toast.error("Erreur lors de la désactivation de la catégorie");
+      fetchCategories();
     }
   };
 

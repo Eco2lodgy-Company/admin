@@ -1,5 +1,5 @@
 "use client";
-import { Badge } from "@/components/ui/badge"
+import { Badge } from "@/components/ui/badge";
 import React, { useState, useEffect } from "react";
 import { Toaster } from "@/components/ui/sonner";
 import {
@@ -305,17 +305,11 @@ const EditProductForm = ({ onClose, onEdit, categories, shops, currentProduct, s
         `http://195.35.24.128:8081/api/products/update/${currentProduct.id}`,
         {
           method: "PUT",
-          headers: {
-             Authorization: `Bearer ${token}` },
-          
+          headers: { Authorization: `Bearer ${token}` },
           body: formData,
         }
       );
-      console.log("response", response);
-      if (!response.ok) {
-        throw new Error(`HTTP error! Status: ${response.status}`);
-      }
-      console.log("response", response);
+      if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
       const data = await response.json();
       onEdit(data.data);
       toast.success(data.message);
@@ -500,79 +494,84 @@ const ProductManagement = () => {
     acteurUsername: "",
   });
 
-  useEffect(() => {
+  
+
+  const fetchProducts = async () => {
     const username = localStorage.getItem("username");
-    const token = localStorage.getItem("token");
+  const token = localStorage.getItem("token");
+    try {
+      const response = await fetch(
+        `http://195.35.24.128:8081/api/products/liste?username=${username}`,
+        {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+      if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
+      const data = await response.json();
+      setProducts(data.data);
+      setFilteredProducts(data.data);
+      // toast.success(data.message);
+    } catch (err) {
+      console.error("Error fetching products:", err.message);
+      toast.error("Erreur lors de la récupération des produits");
+    }
+  };
 
-    const fetchProducts = async () => {
-      try {
-        const response = await fetch(
-          `http://195.35.24.128:8081/api/products/liste?username=${username}`,
-          {
-            method: "GET",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
-        if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
-        const data = await response.json();
-        setProducts(data.data);
-        setFilteredProducts(data.data);
-        toast.success(data.message);
-      } catch (err) {
-        console.error("Error fetching products:", err.message);
-        toast.error("Erreur lors de la récupération des produits");
-      }
-    };
+  const fetchCategories = async () => {
+    const username = localStorage.getItem("username");
+  const token = localStorage.getItem("token");
+    try {
+      const response = await fetch(
+        `http://195.35.24.128:8081/api/productCategories/liste?username=${username}`,
+        {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+      if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
+      const data = await response.json();
+      setCategories(data.data);
+    } catch (err) {
+      console.error("Error fetching categories:", err.message);
+      toast.error("Erreur lors de la récupération des catégories");
+    }
+  };
 
-    const fetchCategories = async () => {
-      try {
-        const response = await fetch(
-          `http://195.35.24.128:8081/api/productCategories/liste?username=${username}`,
-          {
-            method: "GET",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
-        if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
-        const data = await response.json();
-        setCategories(data.data);
-      } catch (err) {
-        console.error("Error fetching categories:", err.message);
-        toast.error("Erreur lors de la récupération des catégories");
-      }
-    };
+  const fetchShops = async () => {
+    const username = localStorage.getItem("username");
+  const token = localStorage.getItem("token");
+    try {
+      const response = await fetch(
+        `http://195.35.24.128:8081/api/shop/liste?username=${username}`,
+        {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+      if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
+      const data = await response.json();
+      setShops(data.data);
+    } catch (err) {
+      console.error("Error fetching shops:", err.message);
+      toast.error("Erreur lors de la récupération des boutiques");
+    }
+  };
 
-    const fetchShops = async () => {
-      try {
-        const response = await fetch(
-          `http://195.35.24.128:8081/api/shop/liste?username=${username}`,
-          {
-            method: "GET",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
-        if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
-        const data = await response.json();
-        setShops(data.data);
-      } catch (err) {
-        console.error("Error fetching shops:", err.message);
-        toast.error("Erreur lors de la récupération des boutiques");
-      }
-    };
-
+  useEffect(() => {
     fetchProducts();
     fetchCategories();
     fetchShops();
-  }, [setProducts]);
+  }, []);
 
   const filteredProductsList = products.filter((product) =>
     product?.libelle?.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -618,18 +617,16 @@ const ProductManagement = () => {
         }
       );
       if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
-      setProducts(products.filter((product) => product.id !== id));
-      setFilteredProducts(filteredProducts.filter((product) => product.id !== id));
       toast.success("Produit supprimé avec succès");
+      fetchProducts(); // Call fetchProducts after deletion
     } catch (err) {
       console.error("Error deleting product:", err.message);
       toast.error("Erreur lors de la suppression du produit");
+      fetchProducts(); // Call fetchProducts even on error to refresh
     }
   };
 
   const handleAddSuccess = (newProductData) => {
-    setProducts([...products, newProductData]);
-    setFilteredProducts([...filteredProducts, newProductData]);
     setNewProduct({
       libelle: "",
       description: "",
@@ -643,16 +640,13 @@ const ProductManagement = () => {
       acteurUsername: "",
     });
     setIsAddProductOpen(false);
+    fetchProducts(); // Call fetchProducts after adding
   };
 
   const handleEditSuccess = (updatedProduct) => {
-    const updatedProducts = products.map((product) =>
-      product.id === updatedProduct.id ? updatedProduct : product
-    );
-    setProducts(updatedProducts);
-    setFilteredProducts(updatedProducts);
     setCurrentProduct(null);
     setIsEditProductOpen(false);
+    fetchProducts(); // Call fetchProducts after editing
   };
 
   return (

@@ -45,6 +45,7 @@ import {
   Percent,
   Save,
   AlertTriangle,
+  Image as ImageIcon,
 } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
@@ -63,13 +64,14 @@ const Promotions = () => {
     dateFin: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
     status: true,
     acteurId: 2,
+    image: null, // New field for image file or URL
   });
   const [startTime, setStartTime] = useState("00:00");
   const [endTime, setEndTime] = useState("23:59");
 
   useEffect(() => {
     fetchPromotions();
-  }, [setPromotions]);
+  }, []);
 
   const fetchPromotions = async () => {
     const username = localStorage.getItem("username") || "asaleydiori@gmail.com";
@@ -90,7 +92,7 @@ const Promotions = () => {
       const data = await response.json();
       const validPromos = (data.data || []).filter((promo) => promo && promo.id);
       setPromotions(validPromos);
-      toast.success(data.message );
+      // toast.success(data.message);
     } catch (err) {
       console.error("Error fetching promotions:", err.message);
       toast.error("Erreur lors de la récupération des promotions");
@@ -107,6 +109,7 @@ const Promotions = () => {
       dateFin: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
       status: true,
       acteurId: 2,
+      image: null,
     });
     setStartTime("00:00");
     setEndTime("23:59");
@@ -126,6 +129,7 @@ const Promotions = () => {
       dateFin: fin,
       status: promo.promotionStatus ?? true,
       acteurId: 2,
+      image: promo.image || null, // Assuming the API returns an image field
     });
     setStartTime(promo.promotionDateDebut ? format(new Date(promo.promotionDateDebut), "HH:mm") : "00:00");
     setEndTime(promo.promotionDateFin ? format(new Date(promo.promotionDateFin), "HH:mm") : "23:59");
@@ -149,18 +153,27 @@ const Promotions = () => {
       setPromotions(promotions.filter((promo) => promo.id !== promoToDelete.id));
       setPromoToDelete(null);
       toast.success("Promotion supprimée avec succès");
+      fetchPromotions();
     } catch (err) {
       console.error("Error deleting promotion:", err.message);
       toast.error("Erreur lors de la suppression de la promotion");
+      fetchPromotions();
     }
   };
 
   const handleFormChange = (e) => {
-    const { name, value } = e.target;
-    setFormData({
-      ...formData,
-      [name]: value,
-    });
+    const { name, value, files } = e.target;
+    if (name === "image" && files && files[0]) {
+      setFormData({
+        ...formData,
+        image: files[0], // Store the file object
+      });
+    } else {
+      setFormData({
+        ...formData,
+        [name]: value,
+      });
+    }
   };
 
   const handleDateChange = (field, date) => {
@@ -195,64 +208,68 @@ const Promotions = () => {
 
   const handleCreatePromo = async () => {
     const token = localStorage.getItem("token");
-    const body = {
-      intitule: formData.intitule,
-      description: formData.description,
-      reduction: parseInt(formData.reduction, 10),
-      status: formData.status,
-      acteurId: formData.acteurId,
-      dateDebut: formData.dateDebut.toISOString(),
-      dateFin: formData.dateFin.toISOString(),
-    };
+    const formDataToSend = new FormData();
+    formDataToSend.append("intitule", formData.intitule);
+    formDataToSend.append("description", formData.description);
+    formDataToSend.append("reduction", parseInt(formData.reduction, 10));
+    formDataToSend.append("status", formData.status);
+    formDataToSend.append("acteurId", formData.acteurId);
+    formDataToSend.append("dateDebut", formData.dateDebut.toISOString());
+    formDataToSend.append("dateFin", formData.dateFin.toISOString());
+    if (formData.media) {
+      formDataToSend.append("image", formData.media); // Append the image file
+    }
 
     try {
       const response = await fetch(`http://195.35.24.128:8081/api/promotions/livraison/new`, {
         method: "POST",
         headers: {
-          "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify(body),
+        body: formDataToSend, // Use FormData instead of JSON.stringify
       });
 
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(`HTTP error! Status: ${response.status} - ${errorData.message || "Unknown error"}`);
       }
-
+      console.log("Response:", response);
       const data = await response.json();
       const newPromo = data.data;
 
       setPromotions([...promotions, newPromo]);
       toast.success(data.message);
       setIsEditing(false);
+      fetchPromotions();
     } catch (err) {
       console.error("Error creating promotion:", err.message);
       toast.error(`Erreur lors de l'ajout de la promotion: ${err.message}`);
+      fetchPromotions();
     }
   };
 
   const handleUpdatePromo = async () => {
     const token = localStorage.getItem("token");
-    const body = {
-      id: formData.id,
-      intitule: formData.intitule,
-      description: formData.description,
-      reduction: parseInt(formData.reduction, 10),
-      status: formData.status,
-      acteurId: formData.acteurId,
-      dateDebut: formData.dateDebut.toISOString(),
-      dateFin: formData.dateFin.toISOString(),
-    };
-console.log("body", body);
+    const formDataToSend = new FormData();
+    formDataToSend.append("id", formData.id);
+    formDataToSend.append("intitule", formData.intitule);
+    formDataToSend.append("description", formData.description);
+    formDataToSend.append("reduction", parseInt(formData.reduction, 10));
+    formDataToSend.append("status", formData.status);
+    formDataToSend.append("acteurId", formData.acteurId);
+    formDataToSend.append("dateDebut", formData.dateDebut.toISOString());
+    formDataToSend.append("dateFin", formData.dateFin.toISOString());
+    if (formData.media && formData.media instanceof File) {
+      formDataToSend.append("media", formData.media); // Append new image file if changed
+    }
+
     try {
       const response = await fetch(`http://195.35.24.128:8081/api/promotions/livraison/update`, {
         method: "PUT",
         headers: {
-          "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify(body),
+        body: formDataToSend,
       });
 
       if (!response.ok) {
@@ -262,17 +279,19 @@ console.log("body", body);
 
       const data = await response.json();
       const updatedPromo = data.data;
-
-      if (!updatedPromo || !updatedPromo.id) {
+      console.log("Updated Promo:", response);
+      if (!response.ok) {
         throw new Error("La réponse de l'API est invalide ou incomplète");
       }
 
-      setPromotions(promotions.map((promo) => (promo.id === updatedPromo.id ? updatedPromo : promo)));
+      // setPromotions(promotions.map((promo) => (promo.id === updatedPromo.id ? updatedPromo : promo)));
       toast.success("Promotion mise à jour avec succès");
       setIsEditing(false);
+      fetchPromotions();
     } catch (err) {
       console.error("Error updating promotion:", err.message);
       toast.error(`Erreur lors de la mise à jour de la promotion: ${err.message}`);
+      fetchPromotions();
     }
   };
 
@@ -454,6 +473,31 @@ console.log("body", body);
                       rows={3}
                       required
                     />
+                  </div>
+                  {/* New Image Field */}
+                  <div className="space-y-2 md:col-span-2">
+                    <Label htmlFor="image">Image de la promotion</Label>
+                    <Input
+                      id="image"
+                      name="image"
+                      type="file"
+                      accept="image/*"
+                      onChange={handleFormChange}
+                    />
+                    {formData.media && typeof formData.media === "string" && (
+                      <div className="mt-2">
+                        <img
+                          src={formData.media}
+                          alt="Aperçu de l'image"
+                          className="h-20 w-20 object-cover rounded"
+                        />
+                      </div>
+                    )}
+                    {formData.media && formData.media instanceof File && (
+                      <div className="mt-2 text-sm text-gray-500">
+                        Fichier sélectionné : {formData.media.name}
+                      </div>
+                    )}
                   </div>
                   <div className="space-y-2">
                     <Label>Date et heure de début</Label>

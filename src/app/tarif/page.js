@@ -58,38 +58,37 @@ const RidePricing = () => {
   });
 
   // Fetch prices from the API
-  useEffect(() => {
-    const fetchPrices = async () => {
-      const token = localStorage.getItem("token");
-      const username = localStorage.getItem("username");
+  const fetchPrices = async () => {
+    const token = localStorage.getItem("token");
+    const username = localStorage.getItem("username");
 
-      try {
-        const response = await fetch(
-          `http://195.35.24.128:8081/api/tarifications/liste`,
-          {
-            method: "GET",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
-
-        if (!response.ok) {
-          throw new Error(`HTTP error! Status: ${response.status}`);
+    try {
+      const response = await fetch(
+        `http://195.35.24.128:8081/api/tarifications/liste`,
+        {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
         }
+      );
 
-        const data = await response.json();
-        setPrices(data.data || []);
-        toast.success(data.message);
-      } catch (err) {
-        console.error("Error fetching prices:", err.message);
-        toast.error("Erreur lors de la récupération des tarifs");
+      if (!response.ok) {
+        throw new Error(`HTTP error! Status: ${response.status}`);
       }
-    };
 
+      const data = await response.json();
+      setPrices(data.data || []);
+      toast.success(data.message);
+    } catch (err) {
+      console.error("Error fetching prices:", err.message);
+      toast.error("Erreur lors de la récupération des tarifs");
+    }
+  };
+  useEffect(() => {
     fetchPrices();
-  }, [setPrices]);
+  }, []);
 
   const handleAddNewPrice = () => {
     setFormData({
@@ -135,9 +134,11 @@ const RidePricing = () => {
       setIsDeletePriceOpen(false);
       setCurrentPrice(null);
       toast.success("Tarif supprimé avec succès");
+      fetchPrices
     } catch (err) {
       console.error("Error deleting price:", err.message);
       toast.error("Erreur lors de la suppression du tarif");
+      fetchPrices
     }
   };
 
@@ -208,9 +209,11 @@ const RidePricing = () => {
         );
         setPrices(updatedPrices);
         toast.success("Tarif mis à jour avec succès");
+        fetchPrices();
       } else {
         setPrices([...prices, data.data]);
         toast.success("Nouveau tarif ajouté avec succès");
+        fetchPrices();
       }
 
       setIsEditing(false);
@@ -219,6 +222,7 @@ const RidePricing = () => {
       toast.error(
         `Erreur lors de ${formData.id ? "la mise à jour" : "l'ajout"} du tarif`
       );
+      fetchPrices();
     }
   };
 

@@ -39,6 +39,7 @@ const formatNumber = (value) => {
 };
 
 const StatisticsPage = () => {
+ 
   const { 
     userStats, 
     shopStats, 
@@ -50,42 +51,46 @@ const StatisticsPage = () => {
   } = appStatistics;
    const [dashboardStatsGlobal, setDashboardStatsGlobal] = useState([]);
     const [dashboardStats, setDashboardStats] = useState([]);
-    useEffect(() => {
+
+
+    // Assuming username is stored in localStorage
+    const fetchStatsGlobal = async () => {
       const username = localStorage.getItem('username'); // Assuming username is stored in localStorage
-      const token = localStorage.getItem('token'); // Assuming username is stored in localStorage
-      const fetchStatsGlobal = async () => {
-        try {
-          const response = await fetch(`http://195.35.24.128:8081/api/statistique/admin/global?username=${username}`, {
-            method: 'GET',
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${token}`,
-            },
-          });
-          const data = await response.json();
-          console.log('Dashboard Stats Global:', data);
-          setDashboardStatsGlobal(data.data);
-        } catch (error) {
-          console.error('Error fetching dashboard stats:', error);
-        }
-      } 
-  
-      const fetchStatsDash = async () => {
-        try {
-          const response = await fetch(`http://195.35.24.128:8081/api/statistique/admin/dashboard?username=${username}`, {
-            method: 'GET',
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${token}`,
-            },
-          });
-          const data = await response.json();
-          console.log('Dashboard Stats Global:', data);
-          setDashboardStats(data.data);
-        } catch (error) {
-          console.error('Error fetching dashboard stats:', error);
-        }
-      } 
+      const token = localStorage.getItem('token');
+      try {
+        const response = await fetch(`http://195.35.24.128:8081/api/statistique/admin/global?username=${username}`, {
+          method: 'GET',
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        });
+        const data = await response.json();
+        console.log('Dashboard Stats Global:', data);
+        setDashboardStatsGlobal(data.data);
+      } catch (error) {
+        console.error('Error fetching dashboard stats:', error);
+      }
+    } 
+
+    const fetchStatsDash = async () => {
+      try {
+        const response = await fetch(`http://195.35.24.128:8081/api/statistique/admin/dashboard?username=${username}`, {
+          method: 'GET',
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        });
+        const data = await response.json();
+        console.log('Dashboard Stats Global:', data);
+        setDashboardStats(data.data);
+      } catch (error) {
+        console.error('Error fetching dashboard stats:', error);
+      }
+    } 
+
+    useEffect(() => {
       fetchStatsGlobal();
       fetchStatsDash();
     }, []);

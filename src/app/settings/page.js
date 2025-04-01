@@ -43,46 +43,46 @@ const Settings = () => {
   const [isEditingProfile, setIsEditingProfile] = useState(false);
 
   // Fetch profile data on component mount
-  useEffect(() => {
-    const fetchProfile = async () => {
-      const token = localStorage.getItem("token");
-      const username = localStorage.getItem("username");
+  const fetchProfile = async () => {
+    const token = localStorage.getItem("token");
+    const username = localStorage.getItem("username");
 
-      try {
-        const response = await fetch(
-          `http://195.35.24.128:8081/api/user/findByUsername?email=${username}`,
-          {
-            method: "GET",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
-
-        if (!response.ok) {
-          throw new Error(`HTTP error! Status: ${response.status}`);
+    try {
+      const response = await fetch(
+        `http://195.35.24.128:8081/api/user/findByUsername?email=${username}`,
+        {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
         }
+      );
 
-        const data = await response.json();
-        setProfileData({
-          id: data.data.id || 0,
-          email: data.data.email || "",
-          nom: data.data.nom || "",
-          prenom: data.data.prenom || "",
-          telephone: data.data.telephone || "",
-          adresse: data.data.adresse || "",
-          longitude: data.data.longitude || "",
-          latitude: data.data.latitude || "",
-          role: "Administrateur",
-        });
-        toast.success(data.message);
-      } catch (err) {
-        console.error("Error fetching profile:", err.message);
-        toast.error("Erreur lors de la récupération du profil");
+      if (!response.ok) {
+        throw new Error(`HTTP error! Status: ${response.status}`);
       }
-    };
 
+      const data = await response.json();
+      setProfileData({
+        id: data.data.id || 0,
+        email: data.data.email || "",
+        nom: data.data.nom || "",
+        prenom: data.data.prenom || "",
+        telephone: data.data.telephone || "",
+        adresse: data.data.adresse || "",
+        longitude: data.data.longitude || "",
+        latitude: data.data.latitude || "",
+        role: "Administrateur",
+      });
+      toast.success(data.message);
+    } catch (err) {
+      console.error("Error fetching profile:", err.message);
+      toast.error("Erreur lors de la récupération du profil");
+    }
+  };
+
+  useEffect(() => {
     fetchProfile();
   }, []);
 
@@ -125,9 +125,11 @@ const Settings = () => {
 
       toast.success("Profil mis à jour avec succès");
       setIsEditingProfile(false);
+      fetchProfile();
     } catch (err) {
       console.error("Error updating profile:", err.message);
       toast.error("Erreur lors de la mise à jour du profil");
+      fetchProfile();
     }
   };
 
@@ -172,9 +174,11 @@ const Settings = () => {
         newPassword: "",
         confirmNewPassword: "",
       });
+      fetchProfile();
     } catch (err) {
       console.error("Error changing password:", err.message);
       toast.error("Erreur lors du changement de mot de passe");
+      fetchProfile();
     }
   };
 

@@ -82,42 +82,72 @@ export default function UserManagement() {
   });
 
   
+  const formatRole = (role) => {
+    switch (role) {
+      case "ADMIN":
+        return "Administrateur";
+      case "LIVREUR":
+        return "Livreur";
+      case "VENDEUR":
+        return "Vendeur";
+      case "CLIENT":
+        return "Client";
+      default:
+        return role; // Retourne la valeur d'origine si elle n'est pas reconnue
+    }
+  };
+  
+  const formatRoleForDB = (role) => {
+    switch (role) {
+      case "Administrateur":
+        return "ADMINISTRATEUR";
+      case "Livreur":
+        return "LIVREUR";
+      case "Vendeur":
+        return "VENDEUR";
+      case "Client":
+        return "CLIENT";
+      default:
+        return role;
+    }
+  };
+  
+   
+
+  const fetchUsers = async () => {
+    const username = localStorage.getItem("username");
+  const token = localStorage.getItem("token"); 
+    const jwtSecret = process.env.NEXT_PUBLIC_JWT_SECRET;
+    try {
+      const response = await fetch(`http://195.35.24.128:8081/api/user/liste?username=${username}`,{
+        method: "GET",
+        
+        headers: {
+           "Content-Type": "application/json" ,
+           Authorization: `Bearer ${token}`
+          },
+      });
+      console.log(token)
+      if (!response.ok) {
+        throw new Error(`HTTP error! Status: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      setUsers(data.data);
+      setFilteredUsers(data.data);
+      console.log('Users fetched successfully:', data);
+      // toast.success(data.message)
+    } catch (err) {
+      console.error('Error fetching users:', err.message);
+      toast.error("Erreur lors de la recuperation des donnees")
+      // Optionally fall back to mock data if API fails
+      // setUsers(mockUsers);
+      // setFilteredUsers(mockUsers);
+    }
+  };
 
   useEffect(() => {
-    const username = localStorage.getItem("username");
-    const token = localStorage.getItem("token");  
-
-    const fetchUsers = async () => {
-      const jwtSecret = process.env.NEXT_PUBLIC_JWT_SECRET;
-      try {
-        const response = await fetch(`http://195.35.24.128:8081/api/user/liste?username=${username}`,{
-          method: "GET",
-          
-          headers: {
-             "Content-Type": "application/json" ,
-             Authorization: `Bearer ${token}`
-            },
-        });
-        console.log(token)
-        if (!response.ok) {
-          throw new Error(`HTTP error! Status: ${response.status}`);
-        }
-        
-        const data = await response.json();
-        setUsers(data.data);
-        setFilteredUsers(data.data);
-        console.log('Users fetched successfully:', data);
-        toast.success(data.message)
-      } catch (err) {
-        console.error('Error fetching users:', err.message);
-        toast.error("Erreur lors de la recuperation des donnees")
-        // Optionally fall back to mock data if API fails
-        // setUsers(mockUsers);
-        // setFilteredUsers(mockUsers);
-      }
-    };
-    
-    fetchUsers();
+    fetchUsers();    
   }, []);
   // Handle search and filter
   const handleSearch = (e) => {
@@ -183,9 +213,11 @@ export default function UserManagement() {
       setFilteredUsers(data.data);
       console.log('Users fetched successfully:', data);
       toast.success(data.message)
+      await fetchUsers(); // Refresh the user list after adding a new user
     } catch (err) {
       console.error('Error fetching users:', err.message);
       toast.error("Erreur lors de la recuperation des donnees")
+      await fetchUsers();
       // Optionally fall back to mock data if API fails
       // setUsers(mockUsers);
       // setFilteredUsers(mockUsers);
@@ -231,9 +263,11 @@ export default function UserManagement() {
       setFilteredUsers(data.data);
       console.log('Users fetched successfully:', data);
       toast.success(data.message)
+      await fetchUsers(); // Refresh the user list after adding a new user
     } catch (err) {
       console.error('Error fetching users:', err.message);
       toast.error("Erreur lors de la recuperation des donnees")
+      await fetchUsers();
       // Optionally fall back to mock data if API fails
       // setUsers(mockUsers);
       // setFilteredUsers(mockUsers);
@@ -279,9 +313,11 @@ export default function UserManagement() {
       setFilteredUsers(data.data);
       console.log('Users fetched successfully:', data);
       toast.success(data.message)
+      await fetchUsers(); // Refresh the user list after adding a new user
     } catch (err) {
       console.error('Error fetching users:', err.message);
       toast.error("Erreur lors de la recuperation des donnees")
+      await fetchUsers();
       // Optionally fall back to mock data if API fails
       // setUsers(mockUsers);
       // setFilteredUsers(mockUsers);
@@ -321,9 +357,11 @@ export default function UserManagement() {
       setFilteredUsers(data.data);
       console.log('Users fetched successfully:', data);
       toast.success(data.message)
+      await fetchUsers();
     } catch (err) {
       console.error('Error fetching users:', err.message);
       toast.error("Erreur lors de la recuperation des donnees")
+      await fetchUsers();
       // Optionally fall back to mock data if API fails
       // setUsers(mockUsers);
       // setFilteredUsers(mockUsers);
@@ -565,7 +603,7 @@ export default function UserManagement() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filterUsers && filteredUsers.length > 0 ? (
+                {filterUsers && filteredUsers?.length > 0 ? (
                   filteredUsers.map((user) => (
                     <TableRow key={user.id}>
                       <TableCell className="font-medium">
@@ -657,8 +695,9 @@ export default function UserManagement() {
                   Rôle
                 </Label>
                 <Select 
-                  value={currentUser.role} 
+                  value={getRoleName(currentUser.role)} 
                   onValueChange={(value) => setCurrentUser({...currentUser, role: value})}
+                  required
                 >
                   <SelectTrigger id="edit-role" className="col-span-3">
                     <SelectValue placeholder="Sélectionner un rôle" />
@@ -680,6 +719,7 @@ export default function UserManagement() {
                   className="col-span-3"
                   value={currentUser.prenom || ''}
                   onChange={(e) => setCurrentUser({...currentUser, prenom: e.target.value})}
+                  required
                 />
               </div>
               <div className="grid grid-cols-4 items-center gap-4">
@@ -691,6 +731,7 @@ export default function UserManagement() {
                   className="col-span-3"
                   value={currentUser.nom || ''}
                   onChange={(e) => setCurrentUser({...currentUser, nom: e.target.value})}
+                  required
                 />
               </div>
               <div className="grid grid-cols-4 items-center gap-4">
@@ -703,6 +744,7 @@ export default function UserManagement() {
                   className="col-span-3"
                   value={currentUser.email}
                   onChange={(e) => setCurrentUser({...currentUser, email: e.target.value})}
+                  required
                 />
               </div>
               <div className="grid grid-cols-4 items-center gap-4">
@@ -714,6 +756,7 @@ export default function UserManagement() {
                   className="col-span-3"
                   value={currentUser.telephone || ''}
                   onChange={(e) => setCurrentUser({...currentUser, telephone: e.target.value})}
+                  required
                 />
               </div>
               <div className="grid grid-cols-4 items-center gap-4">
@@ -725,6 +768,7 @@ export default function UserManagement() {
                   className="col-span-3"
                   value={currentUser.adresse || ''}
                   onChange={(e) => setCurrentUser({...currentUser, adresse: e.target.value})}
+                  required
                 />
               </div>
             </div>

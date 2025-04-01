@@ -48,33 +48,34 @@ const FAQ = () => {
   });
 
   // Charger les FAQs au montage du composant
-  useEffect(() => {
+
+  
+
+  const fetchFAQs = async () => {
     const username = localStorage.getItem("username");
-    const token = localStorage.getItem("token");
-
-    const fetchFAQs = async () => {
-      try {
-        const response = await fetch(
-          `http://195.35.24.128:8081/api/faqs/liste?username=${username}`, // À ajuster selon votre endpoint
-          {
-            method: "GET",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
-        if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
-        const data = await response.json();
-        setFaqs(data.data || []);
-        toast.success(data.message);
-      } catch (err) {
-        console.error("Error fetching FAQs:", err.message);
-        toast.error("Erreur lors de la récupération des FAQs");
-      }
-    };
-
-    fetchFAQs();
+  const token = localStorage.getItem("token");
+    try {
+      const response = await fetch(
+        `http://195.35.24.128:8081/api/faqs/liste?username=${username}`, // À ajuster selon votre endpoint
+        {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+      if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
+      const data = await response.json();
+      setFaqs(data.data || []);
+      toast.success(data.message);
+    } catch (err) {
+      console.error("Error fetching FAQs:", err.message);
+      toast.error("Erreur lors de la récupération des FAQs");
+    }
+  };
+  useEffect(() => {
+       fetchFAQs();
   }, [setFaqs]);
 
   // Filtrer les FAQs en fonction de la recherche
@@ -119,9 +120,11 @@ const FAQ = () => {
       setCurrentFaq({ question: "", reponse: "", userId: 0 });
       setIsAddDialogOpen(false);
       toast.success(data.message);
+      fetchFAQs();
     } catch (err) {
       console.error("Error adding FAQ:", err.message);
       toast.error("Erreur lors de l'ajout de la FAQ");
+      fetchFAQs();
     }
   };
 
@@ -166,9 +169,11 @@ const FAQ = () => {
       setIsEditDialogOpen(false);
       setCurrentFaq({ question: "", reponse: "", userId: 0 });
       toast.success(data.message);
+      fetchFAQs();
     } catch (err) {
       console.error("Error updating FAQ:", err.message);
       toast.error("Erreur lors de la mise à jour de la FAQ");
+      fetchFAQs();
     }
   };
 
@@ -191,9 +196,11 @@ const FAQ = () => {
       const updatedFaqs = faqs.filter((faq) => faq.id !== id);
       setFaqs(updatedFaqs);
       toast.success("FAQ supprimée avec succès");
+      fetchFAQs();
     } catch (err) {
       console.error("Error deleting FAQ:", err.message);
       toast.error("Erreur lors de la suppression de la FAQ");
+      fetchFAQs();
     }
   };
 
