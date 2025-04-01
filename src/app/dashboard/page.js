@@ -1,5 +1,5 @@
 "use client";
-import React from 'react';
+import React, { useState,useEffect } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line } from 'recharts';
 import { 
   Users, 
@@ -14,6 +14,8 @@ import {
 import { dashboardStats } from '@/data/mockData';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
+
+
 
 // Stats Card Component
 const StatsCard = ({ 
@@ -105,6 +107,51 @@ const CustomTooltip = ({ active, payload, label }) => {
 
 // Main Dashboard Component
 export default function Dashboard() {
+
+  const [dashboardStatsGlobal, setDashboardStatsGlobal] = useState([]);
+  const [dashboardStats, setDashboardStats] = useState([]);
+  useEffect(() => {
+    const username = localStorage.getItem('username'); // Assuming username is stored in localStorage
+    const token = localStorage.getItem('token'); // Assuming username is stored in localStorage
+    const fetchStatsGlobal = async () => {
+      try {
+        const response = await fetch(`http://195.35.24.128:8081/api/statistique/admin/global?username=${username}`, {
+          method: 'GET',
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        });
+        const data = await response.json();
+        console.log('Dashboard Stats Global:', data);
+        setDashboardStatsGlobal(data.data);
+      } catch (error) {
+        console.error('Error fetching dashboard stats:', error);
+      }
+    } 
+
+    const fetchStatsDash = async () => {
+      try {
+        const response = await fetch(`http://195.35.24.128:8081/api/statistique/admin/dashboard?username=${username}`, {
+          method: 'GET',
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        });
+        const data = await response.json();
+        console.log('Dashboard Stats Global:', data);
+        setDashboardStats(data.data);
+      } catch (error) {
+        console.error('Error fetching dashboard stats:', error);
+      }
+    } 
+    fetchStatsGlobal();
+    fetchStatsDash();
+  }, []);
+
+
+
   // Formatter pour les valeurs monétaires
   const formatter = new Intl.NumberFormat('fr-FR', {
     style: 'currency',
@@ -122,28 +169,28 @@ export default function Dashboard() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatsCard 
           title="Utilisateurs" 
-          value={dashboardStats.totalUsers} 
+          value={dashboardStatsGlobal.users} 
           icon={<Users className="h-6 w-6" />}
           trend={8}
           trendLabel="vs mois précédent"
         />
         <StatsCard 
           title="Commandes" 
-          value={dashboardStats.totalOrders} 
+          value={dashboardStatsGlobal.commandes} 
           icon={<ShoppingBag className="h-6 w-6" />}
           trend={12}
           trendLabel="vs mois précédent"
         />
         <StatsCard 
           title="Boutiques" 
-          value={dashboardStats.totalSellers} 
+          value={dashboardStatsGlobal.shops} 
           icon={<Store className="h-6 w-6" />}
           trend={5}
           trendLabel="vs mois précédent"
         />
         <StatsCard 
           title="Revenu Mensuel" 
-          value={formatter.format(dashboardStats.monthlyRevenue)} 
+          value={formatter.format(dashboardStatsGlobal.revenu)} 
           icon={<CreditCard className="h-6 w-6" />}
           trend={15}
           trendLabel="vs mois précédent"
@@ -154,19 +201,19 @@ export default function Dashboard() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mt-6">
         <StatsCard 
           title="Commandes en attente" 
-          value={dashboardStats.pendingOrders} 
+          value={dashboardStats.commandesAttente} 
           icon={<Clock className="h-6 w-6" />}
           className="bg-yellow-50 border-yellow-100"
         />
         <StatsCard 
           title="Commandes en cours" 
-          value={dashboardStats.inProgressOrders} 
+          value={dashboardStats.commandesEncours} 
           icon={<Truck className="h-6 w-6" />}
           className="bg-blue-50 border-blue-100"
         />
         <StatsCard 
           title="Commandes livrées" 
-          value={dashboardStats.deliveredOrders} 
+          value={dashboardStats.commandesLivre} 
           icon={<CheckCircle className="h-6 w-6" />}
           className="bg-green-50 border-green-100"
         />
@@ -195,7 +242,7 @@ export default function Dashboard() {
         </Card>
 
         {/* Recent Activity */}
-        <Card>
+        {/* <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-lg">Activité récente</CardTitle>
           </CardHeader>
@@ -211,7 +258,7 @@ export default function Dashboard() {
               ))}
             </div>
           </CardContent>
-        </Card>
+        </Card> */}
       </div>
 
       {/* Revenue Chart */}

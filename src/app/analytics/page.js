@@ -1,5 +1,5 @@
 "use client"
-import React from 'react';
+import {React,useState,useEffect} from 'react';
 import { 
   Card, 
   CardContent, 
@@ -35,7 +35,7 @@ import {
 // Helper function to ensure consistent number formatting
 const formatNumber = (value) => {
   // Use a specific locale (e.g., 'en-US') for consistency between server and client
-  return value.toLocaleString('en-US');
+  return value?.toLocaleString('fr-FR');
 };
 
 const StatisticsPage = () => {
@@ -48,16 +48,57 @@ const StatisticsPage = () => {
     customerStats, 
     marketingStats 
   } = appStatistics;
+   const [dashboardStatsGlobal, setDashboardStatsGlobal] = useState([]);
+    const [dashboardStats, setDashboardStats] = useState([]);
+    useEffect(() => {
+      const username = localStorage.getItem('username'); // Assuming username is stored in localStorage
+      const token = localStorage.getItem('token'); // Assuming username is stored in localStorage
+      const fetchStatsGlobal = async () => {
+        try {
+          const response = await fetch(`http://195.35.24.128:8081/api/statistique/admin/global?username=${username}`, {
+            method: 'GET',
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`,
+            },
+          });
+          const data = await response.json();
+          console.log('Dashboard Stats Global:', data);
+          setDashboardStatsGlobal(data.data);
+        } catch (error) {
+          console.error('Error fetching dashboard stats:', error);
+        }
+      } 
+  
+      const fetchStatsDash = async () => {
+        try {
+          const response = await fetch(`http://195.35.24.128:8081/api/statistique/admin/dashboard?username=${username}`, {
+            method: 'GET',
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`,
+            },
+          });
+          const data = await response.json();
+          console.log('Dashboard Stats Global:', data);
+          setDashboardStats(data.data);
+        } catch (error) {
+          console.error('Error fetching dashboard stats:', error);
+        }
+      } 
+      fetchStatsGlobal();
+      fetchStatsDash();
+    }, []);
 
   // Couleurs pour les graphiques
   const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8'];
 
   // Données pour le graphique utilisateurs par rôle
   const userRoleData = [
-    { name: 'Admin', value: userStats.usersByRole.admin },
-    { name: 'Vendeurs', value: userStats.usersByRole.seller },
-    { name: 'Livreurs', value: userStats.usersByRole.deliverer },
-    { name: 'Clients', value: userStats.usersByRole.client }
+    { name: 'Admin', value: dashboardStatsGlobal.administrateurs },
+    { name: 'Vendeurs', value: dashboardStatsGlobal.vendeurs },
+    { name: 'Livreurs', value: dashboardStatsGlobal.livreurs },
+    { name: 'Clients', value:dashboardStatsGlobal.clients }
   ];
 
   // Données pour le graphique des sources de revenus
@@ -91,7 +132,7 @@ const StatisticsPage = () => {
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{userStats.totalUsers}</div>
+            <div className="text-2xl font-bold">{dashboardStatsGlobal.users}</div>
             <p className="text-xs text-muted-foreground">
               +{userStats.newUsersThisMonth} ce mois-ci ({userStats.userGrowthRate}%)
             </p>
@@ -105,7 +146,7 @@ const StatisticsPage = () => {
             <Store className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{shopStats.totalShops}</div>
+            <div className="text-2xl font-bold">{dashboardStatsGlobal.shops}</div>
             <p className="text-xs text-muted-foreground">
               +{shopStats.newShopsThisMonth} ce mois-ci ({shopStats.shopGrowthRate}%)
             </p>
@@ -119,7 +160,7 @@ const StatisticsPage = () => {
             <ShoppingBag className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{orderStats.totalOrders}</div>
+            <div className="text-2xl font-bold">{dashboardStatsGlobal.commandes}</div>
             <p className="text-xs text-muted-foreground">
               {orderStats.ordersThisMonth} ce mois-ci (Moy: {orderStats.averageOrderValue}€)
             </p>
@@ -133,7 +174,7 @@ const StatisticsPage = () => {
             <DollarSign className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{formatNumber(revenueStats.totalRevenue)}€</div>
+            <div className="text-2xl font-bold">{formatNumber(dashboardStatsGlobal.revenu)}€</div>
             <p className="text-xs text-muted-foreground">
               +{revenueStats.revenueGrowth.toString()}% de croissance
             </p>
