@@ -107,6 +107,8 @@ export default function LOGIN() {
       localStorage.setItem("logedUserId", id);
       localStorage.setItem("token", Token);
       console.log("Token",Token)
+      const expiresAt = Date.now() + 3600 * 1000; // 1h en millisecondes
+      localStorage.setItem("tokenExpiresAt", expiresAt);
       // Afficher le message de succès avant la redirection
       setSuccess(true);
       

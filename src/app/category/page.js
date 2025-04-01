@@ -126,7 +126,7 @@ export default function CategoryManagement() {
 
         const data = await response.json();
         setShops(data.data);
-        toast.success("Boutiques chargées avec succès");
+        toast.success(data.message);
       } catch (err) {
         console.error("Error fetching shops:", err.message);
         toast.error("Erreur lors de la récupération des boutiques");
@@ -187,7 +187,7 @@ export default function CategoryManagement() {
         shopId: 0,
         acteurUsername: "",
       });
-      toast.success("Catégorie ajoutée avec succès");
+      toast.success(data.message);
     } catch (err) {
       console.error("Error adding category:", err.message);
       toast.error("Erreur lors de l'ajout de la catégorie");
@@ -234,7 +234,7 @@ export default function CategoryManagement() {
       );
       setIsEditCategoryOpen(false);
       setCurrentCategory(null);
-      toast.success("Catégorie mise à jour avec succès");
+      toast.success(data.message);
     } catch (err) {
       console.error("Error updating category:", err.message);
       toast.error("Erreur lors de la mise à jour de la catégorie");
@@ -285,7 +285,7 @@ export default function CategoryManagement() {
     const token = localStorage.getItem("token");
     try {
       const response = await fetch(
-        `http://195.35.24.128:8081/api/productCategories/api/productCategories/changeStatus/${currentCategory.id}`,
+        `http://195.35.24.128:8081/api/productCategories/api/productCategories/changeStatus/${currentCategory.id}?status=true`,
         {
           method: "PUT",
           headers: {
@@ -311,7 +311,7 @@ export default function CategoryManagement() {
       );
       setIsActivateCategoryOpen(false);
       setCurrentCategory(null);
-      toast.success("Catégorie activée avec succès");
+      toast.success(data.message);
     } catch (err) {
       console.error("Error activating category:", err.message);
       toast.error("Erreur lors de l'activation de la catégorie");
@@ -324,7 +324,7 @@ export default function CategoryManagement() {
     const token = localStorage.getItem("token");
     try {
       const response = await fetch(
-        `http://195.35.24.128:8081/api/productCategories/api/productCategories/changeStatus/${currentCategory.id}`,
+        `http://195.35.24.128:8081/api/productCategories/api/productCategories/changeStatus/${currentCategory.id}?status=false`,
         {
           method: "PUT",
           headers: {
@@ -333,7 +333,7 @@ export default function CategoryManagement() {
           },
         }
       );
-
+console.log(response);
       if (!response.ok) {
         throw new Error(`HTTP error! Status: ${response.status}`);
       }

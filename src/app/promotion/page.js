@@ -223,12 +223,8 @@ const Promotions = () => {
       const data = await response.json();
       const newPromo = data.data;
 
-      if (!newPromo || !newPromo.id) {
-        throw new Error("La réponse de l'API est invalide ou incomplète");
-      }
-
       setPromotions([...promotions, newPromo]);
-      toast.success("Nouvelle promotion ajoutée avec succès");
+      toast.success(data.message);
       setIsEditing(false);
     } catch (err) {
       console.error("Error creating promotion:", err.message);

@@ -181,7 +181,7 @@ export default function ShopManagement() {
     }
     formData.append("vendeurId", newShop.vendeurId);
     formData.append("acteurId", id);
-    console.log(formData)
+    console.log("ndnndndnd",Object.fromEntries(formData.entries()));
     try {
       const response = await fetch(`http://195.35.24.128:8081/api/shop/new`, {
         method: "POST",
@@ -195,7 +195,7 @@ export default function ShopManagement() {
       if (!response.ok) {
         throw new Error(`HTTP error! Status: ${response.status}`);
       }
-
+      console.log(response)
       const data = await response.json();
       setShops([...shops, data.data]);
       setFilteredShops([...filteredShops, data.data]);
@@ -211,7 +211,7 @@ export default function ShopManagement() {
         vendeurId: 0,
         acteurId: 0,
       });
-      toast.success("Boutique ajoutée avec succès");
+      toast.success(response.message);
     } catch (err) {
       console.error("Error adding shop:", err.message);
       toast.error("Erreur lors de l'ajout de la boutique");
@@ -273,6 +273,7 @@ console.log(currentShop.id)
     if (!currentShop) return;
 
     const token = localStorage.getItem("token");
+    console.log("shop id",currentShop.id)
     try {
       const response = await fetch(
         `http://195.35.24.128:8081/api/shop/delete/${currentShop.id}`,
@@ -280,9 +281,11 @@ console.log(currentShop.id)
           method: "DELETE",
           headers: {
             Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
           },
         }
       );
+      console.log(response)
 
       if (!response.ok) {
         throw new Error(`HTTP error! Status: ${response.status}`);

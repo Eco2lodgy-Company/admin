@@ -311,14 +311,14 @@ const EditProductForm = ({ onClose, onEdit, categories, shops, currentProduct, s
           body: formData,
         }
       );
-
+      console.log("response", response);
       if (!response.ok) {
         throw new Error(`HTTP error! Status: ${response.status}`);
       }
       console.log("response", response);
       const data = await response.json();
       onEdit(data.data);
-      toast.success("Produit mis à jour avec succès");
+      toast.success(data.message);
       onClose();
     } catch (err) {
       console.error("Error updating product:", err.message);

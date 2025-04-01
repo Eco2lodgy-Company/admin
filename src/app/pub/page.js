@@ -213,24 +213,17 @@ const Advertisements = () => {
         },
         body: formDataToSend,
       });
-      console.log("Response status (create):", response);
 
 
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(`HTTP error! Status: ${response.status} - ${errorData.message || "Unknown error"}`);
       }
-      console.log("Response status (create):", response);
       const data = await response.json();
-      console.log("API response (create):", data);
       const newAd = data.data;
 
-      if (!newAd || !newAd.id) {
-        throw new Error("La réponse de l'API est invalide ou incomplète");
-      }
-
       setAds([...ads, newAd]);
-      toast.success("Nouvelle publicité ajoutée avec succès");
+      toast.success(data.message);
       setIsEditing(false);
     } catch (err) {
       console.error("Error creating ad:", err.message);
@@ -240,6 +233,7 @@ const Advertisements = () => {
 
   const handleUpdateAd = async () => {
     const token = localStorage.getItem("token");
+    const id = localStorage.getItem("logedUserId");
 
     const formDataToSend = new FormData();
     formDataToSend.append("id", formData.id);
@@ -248,14 +242,16 @@ const Advertisements = () => {
     if (formData.media) formDataToSend.append("media", formData.media);
     formDataToSend.append("dateDebut", formData.dateDebut.toISOString());
     formDataToSend.append("dateFin", formData.dateFin.toISOString());
+    formDataToSend.append("acteurId", id);
 
     console.log("Form data to send (update):", Object.fromEntries(formDataToSend.entries()));
 
     try {
-      const response = await fetch(`http://195.35.24.128:8081/api/pubs/update/${formData.id}`, {
+      const response = await fetch(`http://195.35.24.128:8081/api/pubs/update`, {
         method: "PUT",
         headers: {
           Authorization: `Bearer ${token}`,
+          contentType: "multipart/form-data",
         },
         body: formDataToSend,
       });
@@ -269,12 +265,8 @@ const Advertisements = () => {
       console.log("API response (update):", data);
       const updatedAd = data.data;
 
-      if (!updatedAd || !updatedAd.id) {
-        throw new Error("La réponse de l'API est invalide ou incomplète");
-      }
-
       setAds(ads.map((ad) => (ad.id === updatedAd.id ? updatedAd : ad)));
-      toast.success("Publicité mise à jour avec succès");
+      toast.success(data.message);
       setIsEditing(false);
     } catch (err) {
       console.error("Error updating ad:", err.message);

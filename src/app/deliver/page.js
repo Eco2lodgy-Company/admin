@@ -244,12 +244,13 @@ export default function DeliveryManagement() {
     }
 
     const delivererData = {
-      idLivreur: parseInt(selectedDeliverer.livreurUserId),
+      idLivreur: parseInt(selectedDeliverer.id),
       acteurId: parseInt(acteurId),
       isDisponible: true,
       moyenDeplacement: selectedDeliverer.moyenDeplacement,
     };
-
+    console.log("Selected deliverer:", selectedDeliverer);
+console.log("Deliverer data to update:", delivererData);  
     try {
       const response = await fetch(
         `http://195.35.24.128:8081/api/livreurs/update`,
@@ -266,12 +267,12 @@ export default function DeliveryManagement() {
       if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
       const data = await response.json();
       const updatedDeliverer = data.data;
-      setDeliverers(
-        deliverers.map((d) => (d.id === updatedDeliverer.id ? updatedDeliverer : d))
-      );
-      setFilteredDeliverers(
-        filteredDeliverers.map((d) => (d.id === updatedDeliverer.id ? updatedDeliverer : d))
-      );
+      // setDeliverers(
+      //   deliverers.map((d) => (d.id === updatedDeliverer.id ? updatedDeliverer : d))
+      // );
+      // setFilteredDeliverers(
+      //   filteredDeliverers.map((d) => (d.id === updatedDeliverer.id ? updatedDeliverer : d))
+      // );
       setShowEditDeliverer(false);
       toast.success("Livreur modifié avec succès");
     } catch (err) {
@@ -746,9 +747,9 @@ export default function DeliveryManagement() {
               <div className="flex flex-col gap-2">
                 <Label htmlFor="livreurUserId">Livreur</Label>
                 <Select
-                  value={selectedDeliverer.livreurUserId}
+                  value={selectedDeliverer.id}
                   onValueChange={(value) =>
-                    setSelectedDeliverer({ ...selectedDeliverer, livreurUserId: value })
+                    setSelectedDeliverer({ ...selectedDeliverer, id: value })
                   }
                 >
                   <SelectTrigger className="w-full">
@@ -777,10 +778,14 @@ export default function DeliveryManagement() {
                     <SelectValue placeholder="Sélectionner un moyen" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="Moto">Moto</SelectItem>
-                    <SelectItem value="Voiture">Voiture</SelectItem>
-                    <SelectItem value="Vélo">Vélo</SelectItem>
-                  </SelectContent>
+                              <SelectItem value="Moto">Moto</SelectItem>
+                              <SelectItem value="Voiture">Voiture</SelectItem>
+                              <SelectItem value="Camion">Camion</SelectItem>
+                              <SelectItem value="Scooter">Scooter</SelectItem>
+                              <SelectItem value="Vélo">Vélo</SelectItem>
+                              <SelectItem value="Trotinette">Trotinette</SelectItem>
+                              <SelectItem value="À pied">À pied</SelectItem>
+                            </SelectContent>
                 </Select>
               </div>
             </div>

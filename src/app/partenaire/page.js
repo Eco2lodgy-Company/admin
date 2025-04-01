@@ -99,7 +99,7 @@ const Partners = () => {
 
     try {
       const response = await fetch(
-        `http://195.35.24.128:8081/api/partenaires/delete?id=${id}`,
+        `http://195.35.24.128:8081/api/partenaires/delete/${id}`,
         {
           method: "DELETE",
           headers: {
