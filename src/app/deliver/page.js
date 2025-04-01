@@ -130,7 +130,7 @@ export default function DeliveryManagement() {
         const data = await response.json();
         const userList = data.data || [];
         setUsers(userList);
-        toast.success("Utilisateurs chargés avec succès");
+        // toast.success(data.message);
       } catch (err) {
         console.error("Error fetching users:", err.message);
         toast.error("Erreur lors de la récupération des utilisateurs");
@@ -155,7 +155,7 @@ export default function DeliveryManagement() {
         setOrders(orderList);
         setFilteredOrders(orderList);
         console.log("Paniers:", orderList);
-        toast.success("Paniers chargés avec succès");
+        // toast.success(data.message);
       } catch (err) {
         console.error("Error fetching orders:", err.message);
         toast.error("Erreur lors de la récupération des paniers");
@@ -226,7 +226,7 @@ export default function DeliveryManagement() {
       setFilteredDeliverers([...filteredDeliverers, newDelivererData]);
       setNewDeliverer({ livreurUserId: "", moyenDeplacement: "" });
       setShowAddDeliverer(false);
-      toast.success("Livreur ajouté avec succès");
+      toast.success(data.message);
     } catch (err) {
       console.error("Error adding deliverer:", err.message);
       toast.error("Erreur lors de l'ajout du livreur");
@@ -274,7 +274,7 @@ console.log("Deliverer data to update:", delivererData);
       //   filteredDeliverers.map((d) => (d.id === updatedDeliverer.id ? updatedDeliverer : d))
       // );
       setShowEditDeliverer(false);
-      toast.success("Livreur modifié avec succès");
+      toast.success(data.message);
     } catch (err) {
       console.error("Error updating deliverer:", err.message);
       toast.error("Erreur lors de la modification du livreur");
@@ -287,11 +287,12 @@ console.log("Deliverer data to update:", delivererData);
 
     try {
       const response = await fetch(
-        `http://195.35.24.128:8081/api/deliverers/delete/${selectedDeliverer.id}`,
+        `http://195.35.24.128:8081/api/livreurs/delete/${selectedDeliverer.id}`,
         {
           method: "DELETE",
           headers: {
             Authorization: `Bearer ${token}`,
+            contentType: "application/json",
           },
         }
       );
@@ -300,7 +301,8 @@ console.log("Deliverer data to update:", delivererData);
       setDeliverers(deliverers.filter((d) => d.id !== selectedDeliverer.id));
       setFilteredDeliverers(filteredDeliverers.filter((d) => d.id !== selectedDeliverer.id));
       setShowDeleteDeliverer(false);
-      toast.success("Livreur supprimé avec succès");
+      const data = await response.json();
+      toast.success(data.message);
     } catch (err) {
       console.error("Error deleting deliverer:", err.message);
       toast.error("Erreur lors de la suppression du livreur");
@@ -737,67 +739,67 @@ console.log("Deliverer data to update:", delivererData);
 
       {/* Dialog Modifier Livreur */}
       <Dialog open={showEditDeliverer} onOpenChange={setShowEditDeliverer}>
-        <DialogContent className="sm:max-w-[500px]">
-          <DialogHeader>
-            <DialogTitle>Modifier le livreur</DialogTitle>
-            <DialogDescription>Modifiez les informations du livreur ci-dessous.</DialogDescription>
-          </DialogHeader>
-          {selectedDeliverer && (
-            <div className="grid gap-4 py-4">
-              <div className="flex flex-col gap-2">
-                <Label htmlFor="livreurUserId">Livreur</Label>
-                <Select
-                  value={selectedDeliverer.id}
-                  onValueChange={(value) =>
-                    setSelectedDeliverer({ ...selectedDeliverer, id: value })
-                  }
-                >
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Sélectionner un livreur" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {users
-                      .filter((u) => u.role === "LIVREUR")
-                      .map((deliverer) => (
-                        <SelectItem key={deliverer.id} value={deliverer.id.toString()}>
-                          {deliverer.prenom} {deliverer.nom} ({deliverer.email})
-                        </SelectItem>
-                      ))}
-                  </SelectContent>
-                </Select>
+          <DialogContent className="sm:max-w-[500px]">
+            <DialogHeader>
+              <DialogTitle>Modifier le livreur</DialogTitle>
+              <DialogDescription>Modifiez les informations du livreur ci-dessous.</DialogDescription>
+            </DialogHeader>
+            {selectedDeliverer && (
+              <div className="grid gap-4 py-4">
+                {/* <div className="flex flex-col gap-2">
+                  <Label htmlFor="livreurUserId">Livreur</Label>
+                  <Select
+                    value={selectedDeliverer.id} // Utiliser livreurUserId au lieu de id
+                    onValueChange={(value) =>
+                      setSelectedDeliverer({ ...selectedDeliverer, id: value })
+                    }
+                  >
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Sélectionner un livreur" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {users
+                        .filter((u) => u.role === "LIVREUR")
+                        .map((deliverer) => (
+                          <SelectItem key={deliverer.id} value={deliverer.id.toString()}>
+                            {deliverer.prenom} {deliverer.nom} ({deliverer.email})
+                          </SelectItem>
+                        ))}
+                    </SelectContent>
+                  </Select>
+                </div> */}
+                <div className="flex flex-col gap-2">
+                  <Label htmlFor="moyenDeplacement">Moyen de déplacement</Label>
+                  <Select
+                    value={selectedDeliverer.moyenDeplacement}
+                    onValueChange={(value) =>
+                      setSelectedDeliverer({ ...selectedDeliverer, moyenDeplacement: value })
+                    }
+                  >
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Sélectionner un moyen" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Moto">Moto</SelectItem>
+                      <SelectItem value="Voiture">Voiture</SelectItem>
+                      <SelectItem value="Camion">Camion</SelectItem>
+                      <SelectItem value="Scooter">Scooter</SelectItem>
+                      <SelectItem value="Vélo">Vélo</SelectItem>
+                      <SelectItem value="Trotinette">Trotinette</SelectItem>
+                      <SelectItem value="À pied">À pied</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
-              <div className="flex flex-col gap-2">
-                <Label htmlFor="moyenDeplacement">Moyen de déplacement</Label>
-                <Select
-                  value={selectedDeliverer.moyenDeplacement}
-                  onValueChange={(value) =>
-                    setSelectedDeliverer({ ...selectedDeliverer, moyenDeplacement: value })
-                  }
-                >
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Sélectionner un moyen" />
-                  </SelectTrigger>
-                  <SelectContent>
-                              <SelectItem value="Moto">Moto</SelectItem>
-                              <SelectItem value="Voiture">Voiture</SelectItem>
-                              <SelectItem value="Camion">Camion</SelectItem>
-                              <SelectItem value="Scooter">Scooter</SelectItem>
-                              <SelectItem value="Vélo">Vélo</SelectItem>
-                              <SelectItem value="Trotinette">Trotinette</SelectItem>
-                              <SelectItem value="À pied">À pied</SelectItem>
-                            </SelectContent>
-                </Select>
-              </div>
-            </div>
-          )}
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setShowEditDeliverer(false)}>
-              Annuler
-            </Button>
-            <Button onClick={handleEditDeliverer}>Enregistrer les modifications</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+            )}
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setShowEditDeliverer(false)}>
+                Annuler
+              </Button>
+              <Button onClick={handleEditDeliverer}>Enregistrer les modifications</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
 
       {/* Dialog Supprimer Livreur */}
       <Dialog open={showDeleteDeliverer} onOpenChange={setShowDeleteDeliverer}>

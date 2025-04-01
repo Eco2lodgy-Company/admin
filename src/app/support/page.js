@@ -42,7 +42,7 @@ const SupportTickets = () => {
         if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
         const data = await response.json();
         setFeedbacks(data.data || []);
-        toast.success("Feedbacks chargés avec succès");
+        toast.success(data.message);
       } catch (err) {
         console.error("Error fetching feedbacks:", err.message);
         toast.error("Erreur lors de la récupération des feedbacks");

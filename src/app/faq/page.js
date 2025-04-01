@@ -67,7 +67,7 @@ const FAQ = () => {
         if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
         const data = await response.json();
         setFaqs(data.data || []);
-        toast.success("FAQs chargées avec succès");
+        toast.success(data.message);
       } catch (err) {
         console.error("Error fetching FAQs:", err.message);
         toast.error("Erreur lors de la récupération des FAQs");
@@ -118,7 +118,7 @@ const FAQ = () => {
       setFaqs([...faqs, data.data]);
       setCurrentFaq({ question: "", reponse: "", userId: 0 });
       setIsAddDialogOpen(false);
-      toast.success("FAQ ajoutée avec succès");
+      toast.success(data.message);
     } catch (err) {
       console.error("Error adding FAQ:", err.message);
       toast.error("Erreur lors de l'ajout de la FAQ");
@@ -165,7 +165,7 @@ const FAQ = () => {
       setFaqs(updatedFaqs);
       setIsEditDialogOpen(false);
       setCurrentFaq({ question: "", reponse: "", userId: 0 });
-      toast.success("FAQ mise à jour avec succès");
+      toast.success(data.message);
     } catch (err) {
       console.error("Error updating FAQ:", err.message);
       toast.error("Erreur lors de la mise à jour de la FAQ");

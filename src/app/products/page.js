@@ -114,7 +114,7 @@ const AddProductForm = ({ onClose, onAdd, categories, shops, newProduct, setNewP
       if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
       const data = await response.json();
       onAdd(data.data);
-      toast.success("Produit ajouté avec succès");
+      toast.success(data.message);
       onClose();
     } catch (err) {
       console.error("Error adding product:", err.message);
@@ -520,7 +520,7 @@ const ProductManagement = () => {
         const data = await response.json();
         setProducts(data.data);
         setFilteredProducts(data.data);
-        toast.success("Produits chargés avec succès");
+        toast.success(data.message);
       } catch (err) {
         console.error("Error fetching products:", err.message);
         toast.error("Erreur lors de la récupération des produits");

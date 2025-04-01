@@ -127,7 +127,7 @@ export default function ShopManagement() {
 
         const data = await response.json();
         setUsers(data.data);
-        toast.success("Utilisateurs chargés avec succès");
+        // toast.success("Utilisateurs chargés avec succès");
       } catch (err) {
         console.error("Error fetching users:", err.message);
         toast.error("Erreur lors de la récupération des utilisateurs");
@@ -211,7 +211,7 @@ export default function ShopManagement() {
         vendeurId: 0,
         acteurId: 0,
       });
-      toast.success(response.message);
+      toast.success(data.message);
     } catch (err) {
       console.error("Error adding shop:", err.message);
       toast.error("Erreur lors de l'ajout de la boutique");
@@ -262,7 +262,7 @@ console.log(currentShop.id)
       );
       setIsEditShopOpen(false);
       setCurrentShop(null);
-      toast.success("Boutique mise à jour avec succès");
+      toast.success(data.message);
     } catch (err) {
       console.error("Error updating shop:", err.message);
       toast.error("Erreur lors de la mise à jour de la boutique");

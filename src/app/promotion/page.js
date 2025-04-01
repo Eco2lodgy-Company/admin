@@ -90,7 +90,7 @@ const Promotions = () => {
       const data = await response.json();
       const validPromos = (data.data || []).filter((promo) => promo && promo.id);
       setPromotions(validPromos);
-      toast.success("Promotions chargées avec succès");
+      toast.success(data.message );
     } catch (err) {
       console.error("Error fetching promotions:", err.message);
       toast.error("Erreur lors de la récupération des promotions");

@@ -270,9 +270,10 @@ export default function CategoryManagement() {
           (category) => category.id !== currentCategory.id
         )
       );
+      const data = await response.json();
+      toast.success(data.message);
       setIsDeleteCategoryOpen(false);
       setCurrentCategory(null);
-      toast.success("Catégorie supprimée avec succès");
     } catch (err) {
       console.error("Error deleting category:", err.message);
       toast.error("Erreur lors de la suppression de la catégorie");
@@ -350,7 +351,7 @@ console.log(response);
       );
       setIsDeactivateCategoryOpen(false);
       setCurrentCategory(null);
-      toast.success("Catégorie désactivée avec succès");
+      toast.success(data.message);
     } catch (err) {
       console.error("Error deactivating category:", err.message);
       toast.error("Erreur lors de la désactivation de la catégorie");

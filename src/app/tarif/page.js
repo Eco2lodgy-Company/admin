@@ -81,7 +81,7 @@ const RidePricing = () => {
 
         const data = await response.json();
         setPrices(data.data || []);
-        toast.success("Tarifs chargés avec succès");
+        toast.success(data.message);
       } catch (err) {
         console.error("Error fetching prices:", err.message);
         toast.error("Erreur lors de la récupération des tarifs");

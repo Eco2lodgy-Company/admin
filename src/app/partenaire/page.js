@@ -76,7 +76,7 @@ const Partners = () => {
         const data = await response.json();
         setPartners(data.data || []);
         console.log("Partners fetched:", data.data);
-        toast.success("Partenaires chargés avec succès");
+        toast.success(data.message);
       } catch (err) {
         console.error("Error fetching partners:", err.message);
         toast.error("Erreur lors de la récupération des partenaires");
@@ -210,7 +210,7 @@ const Partners = () => {
 
       const data = await response.json();
       setPartners([...partners, data.data]);
-      toast.success(`Partenaire ${addFormData.nom} ajouté avec succès`);
+      toast.success(data.message);
       setShowAddForm(false);
     } catch (err) {
       console.error("Error adding partner:", err.message);
@@ -262,7 +262,7 @@ const Partners = () => {
         partner.id === editFormData.id ? data.data : partner
       );
       setPartners(updatedPartners);
-      toast.success(`Partenaire ${editFormData.nom} modifié avec succès`);
+      toast.success(data.message);
       setShowEditForm(false);
     } catch (err) {
       console.error("Error updating partner:", err.message);

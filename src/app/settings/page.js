@@ -76,7 +76,7 @@ const Settings = () => {
           latitude: data.data.latitude || "",
           role: "Administrateur",
         });
-        toast.success("Profil chargé avec succès");
+        toast.success(data.message);
       } catch (err) {
         console.error("Error fetching profile:", err.message);
         toast.error("Erreur lors de la récupération du profil");

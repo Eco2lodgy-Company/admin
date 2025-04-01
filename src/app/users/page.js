@@ -107,7 +107,7 @@ export default function UserManagement() {
         setUsers(data.data);
         setFilteredUsers(data.data);
         console.log('Users fetched successfully:', data);
-        toast.success("Données chargées avec succèes")
+        toast.success(data.message)
       } catch (err) {
         console.error('Error fetching users:', err.message);
         toast.error("Erreur lors de la recuperation des donnees")
@@ -182,7 +182,7 @@ export default function UserManagement() {
       setUsers(data.data);
       setFilteredUsers(data.data);
       console.log('Users fetched successfully:', data);
-      toast.success("Données chargées avec succèes")
+      toast.success(data.message)
     } catch (err) {
       console.error('Error fetching users:', err.message);
       toast.error("Erreur lors de la recuperation des donnees")
@@ -230,7 +230,7 @@ export default function UserManagement() {
       setUsers(data.data);
       setFilteredUsers(data.data);
       console.log('Users fetched successfully:', data);
-      toast.success("Données chargées avec succèes")
+      toast.success(data.message)
     } catch (err) {
       console.error('Error fetching users:', err.message);
       toast.error("Erreur lors de la recuperation des donnees")
@@ -278,7 +278,7 @@ export default function UserManagement() {
       setUsers(data.data);
       setFilteredUsers(data.data);
       console.log('Users fetched successfully:', data);
-      toast.success("Données activer avec succèes")
+      toast.success(data.message)
     } catch (err) {
       console.error('Error fetching users:', err.message);
       toast.error("Erreur lors de la recuperation des donnees")
@@ -320,7 +320,7 @@ export default function UserManagement() {
       setUsers(data.data);
       setFilteredUsers(data.data);
       console.log('Users fetched successfully:', data);
-      toast.success("Données chargées avec succèes")
+      toast.success(data.message)
     } catch (err) {
       console.error('Error fetching users:', err.message);
       toast.error("Erreur lors de la recuperation des donnees")
