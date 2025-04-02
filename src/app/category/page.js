@@ -46,6 +46,7 @@ import {
   Tag,
   CheckCircle,
   XCircle,
+  Loader2, // Ajout de Loader2 pour le spinner
 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -56,7 +57,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { set } from "date-fns";
 
 export default function CategoryManagement() {
   const [categories, setCategories] = useState([]);
@@ -69,7 +69,8 @@ export default function CategoryManagement() {
   const [isDeactivateCategoryOpen, setIsDeactivateCategoryOpen] = useState(false);
   const [currentCategory, setCurrentCategory] = useState(null);
   const [shops, setShops] = useState([]);
-  
+  const [loading, setLoading] = useState(false); // Nouvel état pour le chargement
+
   const [newCategory, setNewCategory] = useState({
     intitule: "",
     description: "",
@@ -77,68 +78,70 @@ export default function CategoryManagement() {
     acteurUsername: "",
   });
 
-  
-
-    const fetchCategories = async () => {
-      const username = localStorage.getItem("username");
+  const fetchCategories = async () => {
+    const username = localStorage.getItem("username");
     const token = localStorage.getItem("token");
-      try {
-        const response = await fetch(
-          `http://195.35.24.128:8081/api/productCategories/liste?username=${username}`,
-          {
-            method: "GET",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
-
-        if (!response.ok) {
-          throw new Error(`HTTP error! Status: ${response.status}`);
+    setLoading(true); // Début du chargement
+    try {
+      const response = await fetch(
+        `http://195.35.24.128:8081/api/productCategories/liste?username=${username}`,
+        {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
         }
+      );
 
-        const data = await response.json();
-        setCategories(data.data);
-        setFilteredCategories(data.data);
-        // toast.success("Catégories chargées avec succès");
-      } catch (err) {
-        console.error("Error fetching categories:", err.message);
-        toast.error("Erreur lors de la récupération des catégories");
+      if (!response.ok) {
+        throw new Error(`HTTP error! Status: ${response.status}`);
       }
-    };
 
-    const fetchShops = async () => {
-      const username = localStorage.getItem("username");
+      const data = await response.json();
+      setCategories(data.data);
+      setFilteredCategories(data.data);
+    } catch (err) {
+      console.error("Error fetching categories:", err.message);
+      toast.error("Erreur lors de la récupération des catégories");
+    } finally {
+      setLoading(false); // Fin du chargement
+    }
+  };
+
+  const fetchShops = async () => {
+    const username = localStorage.getItem("username");
     const token = localStorage.getItem("token");
-      try {
-        const response = await fetch(
-          `http://195.35.24.128:8081/api/shop/liste?username=${username}`,
-          {
-            method: "GET",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
-        if (!response.ok) {
-          throw new Error(`HTTP error! Status: ${response.status}`);
+    setLoading(true); // Début du chargement
+    try {
+      const response = await fetch(
+        `http://195.35.24.128:8081/api/shop/liste?username=${username}`,
+        {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
         }
-
-        const data = await response.json();
-        setShops(data.data);
-        // toast.success(data.message);
-      } catch (err) {
-        console.error("Error fetching shops:", err.message);
-        toast.error("Erreur lors de la récupération des boutiques");
+      );
+      if (!response.ok) {
+        throw new Error(`HTTP error! Status: ${response.status}`);
       }
-    };
+
+      const data = await response.json();
+      setShops(data.data);
+    } catch (err) {
+      console.error("Error fetching shops:", err.message);
+      toast.error("Erreur lors de la récupération des boutiques");
+    } finally {
+      setLoading(false); // Fin du chargement
+    }
+  };
 
   useEffect(() => {
     fetchCategories();
     fetchShops();
-  }, [setCategories]);
+  }, []);
 
   const handleSearch = (e) => {
     const query = e.target.value.toLowerCase();
@@ -160,12 +163,9 @@ export default function CategoryManagement() {
 
     const token = localStorage.getItem("token");
     const username = localStorage.getItem("username");
+    const categoryToSend = { ...newCategory, acteurUsername: username };
 
-    const categoryToSend = {
-      ...newCategory,
-      acteurUsername: username,
-    };
-
+    setLoading(true); // Début du chargement
     try {
       const response = await fetch(`http://195.35.24.128:8081/api/productCategories/new`, {
         method: "POST",
@@ -181,8 +181,7 @@ export default function CategoryManagement() {
       }
 
       const data = await response.json();
-      setCategories([...categories, data.data]);
-      setFilteredCategories([...filteredCategories, data.data]);
+      await fetchCategories(); // Rafraîchir la liste
       setIsAddCategoryOpen(false);
       setNewCategory({
         intitule: "",
@@ -191,11 +190,11 @@ export default function CategoryManagement() {
         acteurUsername: "",
       });
       toast.success(data.message);
-      fetchCategories();
     } catch (err) {
       console.error("Error adding category:", err.message);
       toast.error("Erreur lors de l'ajout de la catégorie");
-      fetchCategories();
+    } finally {
+      setLoading(false); // Fin du chargement
     }
   };
 
@@ -204,12 +203,9 @@ export default function CategoryManagement() {
 
     const token = localStorage.getItem("token");
     const username = localStorage.getItem("username");
+    const categoryToEdit = { ...currentCategory, acteurUsername: username };
 
-    const categoryToEdit = {
-      ...currentCategory,
-      acteurUsername: username,
-    };
-
+    setLoading(true); // Début du chargement
     try {
       const response = await fetch(
         `http://195.35.24.128:8081/api/productCategories/update/${currentCategory.id}`,
@@ -228,23 +224,15 @@ export default function CategoryManagement() {
       }
 
       const data = await response.json();
-      const updatedCategories = categories.map((category) =>
-        category.id === currentCategory.id ? data.data : category
-      );
-      setCategories(updatedCategories);
-      setFilteredCategories(
-        filteredCategories.map((category) =>
-          category.id === currentCategory.id ? data.data : category
-        )
-      );
+      await fetchCategories(); // Rafraîchir la liste
       setIsEditCategoryOpen(false);
       setCurrentCategory(null);
       toast.success(data.message);
-      fetchCategories();
     } catch (err) {
       console.error("Error updating category:", err.message);
       toast.error("Erreur lors de la mise à jour de la catégorie");
-      fetchCategories();
+    } finally {
+      setLoading(false); // Fin du chargement
     }
   };
 
@@ -252,6 +240,7 @@ export default function CategoryManagement() {
     if (!currentCategory) return;
 
     const token = localStorage.getItem("token");
+    setLoading(true); // Début du chargement
     try {
       const response = await fetch(
         `http://195.35.24.128:8081/api/productCategories/delete?id=${currentCategory.id}`,
@@ -268,24 +257,16 @@ export default function CategoryManagement() {
         throw new Error(`HTTP error! Status: ${response.status}`);
       }
 
-      const updatedCategories = categories.filter(
-        (category) => category.id !== currentCategory.id
-      );
-      setCategories(updatedCategories);
-      setFilteredCategories(
-        filteredCategories.filter(
-          (category) => category.id !== currentCategory.id
-        )
-      );
       const data = await response.json();
-      toast.success(data.message);
+      await fetchCategories(); // Rafraîchir la liste
       setIsDeleteCategoryOpen(false);
       setCurrentCategory(null);
-      fetchCategories();
+      toast.success(data.message);
     } catch (err) {
       console.error("Error deleting category:", err.message);
       toast.error("Erreur lors de la suppression de la catégorie");
-      fetchCategories();
+    } finally {
+      setLoading(false); // Fin du chargement
     }
   };
 
@@ -293,9 +274,10 @@ export default function CategoryManagement() {
     if (!currentCategory) return;
 
     const token = localStorage.getItem("token");
+    setLoading(true); // Début du chargement
     try {
       const response = await fetch(
-        `http://195.35.24.128:8081/api/productCategories/api/productCategories/changeStatus/${currentCategory.id}?status=true`,
+        `http://195.35.24.128:8081/api/productCategories/changeStatus/${currentCategory.id}?status=true`,
         {
           method: "PUT",
           headers: {
@@ -310,23 +292,15 @@ export default function CategoryManagement() {
       }
 
       const data = await response.json();
-      const updatedCategories = categories.map((category) =>
-        category.id === currentCategory.id ? { ...category, status: true } : category
-      );
-      setCategories(updatedCategories);
-      setFilteredCategories(
-        filteredCategories.map((category) =>
-          category.id === currentCategory.id ? { ...category, status: true } : category
-        )
-      );
+      await fetchCategories(); // Rafraîchir la liste
       setIsActivateCategoryOpen(false);
       setCurrentCategory(null);
       toast.success(data.message);
-      fetchCategories();
     } catch (err) {
       console.error("Error activating category:", err.message);
       toast.error("Erreur lors de l'activation de la catégorie");
-      fetchCategories();
+    } finally {
+      setLoading(false); // Fin du chargement
     }
   };
 
@@ -334,9 +308,10 @@ export default function CategoryManagement() {
     if (!currentCategory) return;
 
     const token = localStorage.getItem("token");
+    setLoading(true); // Début du chargement
     try {
       const response = await fetch(
-        `http://195.35.24.128:8081/api/productCategories/api/productCategories/changeStatus/${currentCategory.id}?status=false`,
+        `http://195.35.24.128:8081/api/productCategories/changeStatus/${currentCategory.id}?status=false`,
         {
           method: "PUT",
           headers: {
@@ -345,29 +320,21 @@ export default function CategoryManagement() {
           },
         }
       );
-console.log(response);
+
       if (!response.ok) {
         throw new Error(`HTTP error! Status: ${response.status}`);
       }
 
       const data = await response.json();
-      const updatedCategories = categories.map((category) =>
-        category.id === currentCategory.id ? { ...category, status: false } : category
-      );
-      setCategories(updatedCategories);
-      setFilteredCategories(
-        filteredCategories.map((category) =>
-          category.id === currentCategory.id ? { ...category, status: false } : category
-        )
-      );
+      await fetchCategories(); // Rafraîchir la liste
       setIsDeactivateCategoryOpen(false);
       setCurrentCategory(null);
       toast.success(data.message);
-      fetchCategories();
     } catch (err) {
       console.error("Error deactivating category:", err.message);
       toast.error("Erreur lors de la désactivation de la catégorie");
-      fetchCategories();
+    } finally {
+      setLoading(false); // Fin du chargement
     }
   };
 
@@ -390,6 +357,14 @@ console.log(response);
         <h1 className="text-2xl font-bold">Gestion des catégories</h1>
       </div>
       <Toaster />
+      {loading && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white p-4 rounded-lg flex items-center space-x-2">
+            <Loader2 className="h-6 w-6 animate-spin text-gray-600" />
+            <span className="text-gray-600">Traitement en cours...</span>
+          </div>
+        </div>
+      )}
       <Card>
         <CardHeader className="pb-2">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
@@ -416,7 +391,7 @@ console.log(response);
               </div>
               <Dialog open={isAddCategoryOpen} onOpenChange={setIsAddCategoryOpen}>
                 <DialogTrigger asChild>
-                  <Button className="w-full sm:w-auto">
+                  <Button className="w-full sm:w-auto" disabled={loading}>
                     <Plus className="h-4 w-4 mr-2" />
                     Ajouter une catégorie
                   </Button>
@@ -494,10 +469,17 @@ console.log(response);
                     <Button
                       variant="outline"
                       onClick={() => setIsAddCategoryOpen(false)}
+                      disabled={loading}
                     >
                       Annuler
                     </Button>
-                    <Button onClick={handleAddCategory}>Ajouter</Button>
+                    <Button onClick={handleAddCategory} disabled={loading}>
+                      {loading ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        "Ajouter"
+                      )}
+                    </Button>
                   </DialogFooter>
                 </DialogContent>
               </Dialog>
@@ -537,7 +519,11 @@ console.log(response);
                       <TableCell className="text-right">
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" className="h-8 w-8 p-0">
+                            <Button
+                              variant="ghost"
+                              className="h-8 w-8 p-0"
+                              disabled={loading}
+                            >
                               <MoreVertical className="h-4 w-4" />
                             </Button>
                           </DropdownMenuTrigger>
@@ -660,20 +646,6 @@ console.log(response);
                     </SelectContent>
                   </Select>
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="edit-acteurId">ID Acteur</Label>
-                  <Input
-                    id="edit-acteurId"
-                    type="number"
-                    value={currentCategory.acteurId}
-                    onChange={(e) =>
-                      setCurrentCategory({
-                        ...currentCategory,
-                        acteurId: parseInt(e.target.value) || 0,
-                      })
-                    }
-                  />
-                </div>
               </div>
               <div className="space-y-2">
                 <Label htmlFor="edit-description">Description</Label>
@@ -694,10 +666,17 @@ console.log(response);
             <Button
               variant="outline"
               onClick={() => setIsEditCategoryOpen(false)}
+              disabled={loading}
             >
               Annuler
             </Button>
-            <Button onClick={handleEditCategory}>Enregistrer</Button>
+            <Button onClick={handleEditCategory} disabled={loading}>
+              {loading ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                "Enregistrer"
+              )}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -733,18 +712,30 @@ console.log(response);
             <Button
               variant="outline"
               onClick={() => setIsDeleteCategoryOpen(false)}
+              disabled={loading}
             >
               Annuler
             </Button>
-            <Button variant="destructive" onClick={handleDeleteCategory}>
-              Supprimer
+            <Button
+              variant="destructive"
+              onClick={handleDeleteCategory}
+              disabled={loading}
+            >
+              {loading ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                "Supprimer"
+              )}
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
       {/* Activate Category Dialog */}
-      <Dialog open={isActivateCategoryOpen} onOpenChange={setIsActivateCategoryOpen}>
+      <Dialog
+        open={isActivateCategoryOpen}
+        onOpenChange={setIsActivateCategoryOpen}
+      >
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
             <DialogTitle>Activer la catégorie</DialogTitle>
@@ -774,18 +765,27 @@ console.log(response);
             <Button
               variant="outline"
               onClick={() => setIsActivateCategoryOpen(false)}
+              disabled={loading}
             >
               Annuler
             </Button>
-            <Button variant="default" className="bg-green-600 hover:bg-green-700" onClick={handleActivateCategory}>
-              Activer
+            <Button
+              variant="default"
+              className="bg-green-600 hover:bg-green-700"
+              onClick={handleActivateCategory}
+              disabled={loading}
+            >
+              {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Activer"}
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
       {/* Deactivate Category Dialog */}
-      <Dialog open={isDeactivateCategoryOpen} onOpenChange={setIsDeactivateCategoryOpen}>
+      <Dialog
+        open={isDeactivateCategoryOpen}
+        onOpenChange={setIsDeactivateCategoryOpen}
+      >
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
             <DialogTitle>Désactiver la catégorie</DialogTitle>
@@ -815,11 +815,21 @@ console.log(response);
             <Button
               variant="outline"
               onClick={() => setIsDeactivateCategoryOpen(false)}
+              disabled={loading}
             >
               Annuler
             </Button>
-            <Button variant="default" className="bg-orange-600 hover:bg-orange-700" onClick={handleDeactivateCategory}>
-              Désactiver
+            <Button
+              variant="default"
+              className="bg-orange-600 hover:bg-orange-700"
+              onClick={handleDeactivateCategory}
+              disabled={loading}
+            >
+              {loading ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                "Désactiver"
+              )}
             </Button>
           </DialogFooter>
         </DialogContent>

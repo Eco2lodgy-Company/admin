@@ -64,15 +64,17 @@ import {
   Plus,
   Edit,
   Trash,
+  Loader2, // Ajout de Loader2 pour les spinners
 } from "lucide-react";
 import { toast } from "sonner";
+import { Toaster } from "@/components/ui/sonner"; // Ajout pour les notifications
 
 export default function DeliveryManagement() {
   const [searchQuery, setSearchQuery] = useState("");
   const [deliverers, setDeliverers] = useState([]);
   const [users, setUsers] = useState([]);
   const [filteredDeliverers, setFilteredDeliverers] = useState([]);
-  const [orders, setOrders] = useState([]); // Paniers
+  const [orders, setOrders] = useState([]);
   const [filteredOrders, setFilteredOrders] = useState([]);
   const [selectedDeliverer, setSelectedDeliverer] = useState(null);
   const [showDelivererDetails, setShowDelivererDetails] = useState(false);
@@ -84,97 +86,99 @@ export default function DeliveryManagement() {
     livreurUserId: "",
     moyenDeplacement: "",
   });
+  const [loading, setLoading] = useState(false); // Nouvel état pour le chargement
 
+  const fetchDeliverers = async () => {
+    const username = localStorage.getItem("username");
+    const token = localStorage.getItem("token");
+    setLoading(true); // Début du chargement
+    try {
+      const response = await fetch(
+        `http://195.35.24.128:8081/api/livreurs/liste?username=${username}`,
+        {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+      if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
+      const data = await response.json();
+      const delivererList = data.data || [];
+      setDeliverers(delivererList);
+      setFilteredDeliverers(delivererList);
+      // toast.success("Livreurs chargés avec succès");
+    } catch (err) {
+      console.error("Error fetching deliverers:", err.message);
+      toast.error("Erreur lors de la récupération des livreurs");
+    } finally {
+      setLoading(false); // Fin du chargement
+    }
+  };
 
-  ;
+  const fetchUsers = async () => {
+    const username = localStorage.getItem("username");
+    const token = localStorage.getItem("token");
+    setLoading(true); // Début du chargement
+    try {
+      const response = await fetch(
+        `http://195.35.24.128:8081/api/user/liste?username=${username}`,
+        {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+      if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
+      const data = await response.json();
+      const userList = data.data || [];
+      setUsers(userList);
+    } catch (err) {
+      console.error("Error fetching users:", err.message);
+      toast.error("Erreur lors de la récupération des utilisateurs");
+    } finally {
+      setLoading(false); // Fin du chargement
+    }
+  };
 
-    const fetchDeliverers = async () => {
-      const username = localStorage.getItem("username");
-    const token = localStorage.getItem("token")
-      try {
-        const response = await fetch(
-          `http://195.35.24.128:8081/api/livreurs/liste?username=${username}`,
-          {
-            method: "GET",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
-        if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
-        const data = await response.json();
-        const delivererList = data.data || [];
-        setDeliverers(delivererList);
-        setFilteredDeliverers(delivererList);
-        toast.success("Livreurs chargés avec succès");
-      } catch (err) {
-        console.error("Error fetching deliverers:", err.message);
-        toast.error("Erreur lors de la récupération des livreurs");
-      }
-    };
+  const fetchOrders = async () => {
+    const username = localStorage.getItem("username");
+    const token = localStorage.getItem("token");
+    setLoading(true); // Début du chargement
+    try {
+      const response = await fetch(
+        `http://195.35.24.128:8081/api/paniers/admin/liste?username=${username}`,
+        {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+      if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
+      const data = await response.json();
+      const orderList = data.data || [];
+      setOrders(orderList);
+      setFilteredOrders(orderList);
+      console.log("Paniers:", orderList);
+    } catch (err) {
+      console.error("Error fetching orders:", err.message);
+      toast.error("Erreur lors de la récupération des paniers");
+    } finally {
+      setLoading(false); // Fin du chargement
+    }
+  };
 
-    const fetchUsers = async () => {
-      const username = localStorage.getItem("username");
-    const token = localStorage.getItem("token")
-      try {
-        const response = await fetch(
-          `http://195.35.24.128:8081/api/user/liste?username=${username}`,
-          {
-            method: "GET",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
-        if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
-        const data = await response.json();
-        const userList = data.data || [];
-        setUsers(userList);
-        // toast.success(data.message);
-      } catch (err) {
-        console.error("Error fetching users:", err.message);
-        toast.error("Erreur lors de la récupération des utilisateurs");
-      }
-    };
-
-    const fetchOrders = async () => {
-      const username = localStorage.getItem("username");
-    const token = localStorage.getItem("token")
-      try {
-        const response = await fetch(
-          `http://195.35.24.128:8081/api/paniers/admin/liste?username=${username}`,
-          {
-            method: "GET",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
-        if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
-        const data = await response.json();
-        const orderList = data.data || [];
-        setOrders(orderList);
-        setFilteredOrders(orderList);
-        console.log("Paniers:", orderList);
-        // toast.success(data.message);
-      } catch (err) {
-        console.error("Error fetching orders:", err.message);
-        toast.error("Erreur lors de la récupération des paniers");
-      }
-    };
-  // Charger les données depuis les APIs
   useEffect(() => {
-    
-
     fetchDeliverers();
     fetchUsers();
     fetchOrders();
   }, []);
 
-  // Filtrer les livreurs
   const handleSearchDeliverers = (e) => {
     const query = e.target.value.toLowerCase();
     setSearchQuery(query);
@@ -187,7 +191,6 @@ export default function DeliveryManagement() {
     setFilteredDeliverers(filtered);
   };
 
-  // Filtrer les paniers
   const handleSearchOrders = (e) => {
     const query = e.target.value.toLowerCase();
     setSearchQuery(query);
@@ -200,7 +203,6 @@ export default function DeliveryManagement() {
     setFilteredOrders(filtered);
   };
 
-  // Ajouter un livreur
   const handleAddDeliverer = async () => {
     const token = localStorage.getItem("token");
     const acteurId = localStorage.getItem("logedUserId");
@@ -216,6 +218,7 @@ export default function DeliveryManagement() {
       moyenDeplacement: newDeliverer.moyenDeplacement,
     };
 
+    setLoading(true); // Début du chargement
     try {
       const response = await fetch(`http://195.35.24.128:8081/api/livreurs/new`, {
         method: "POST",
@@ -228,26 +231,24 @@ export default function DeliveryManagement() {
 
       if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
       const data = await response.json();
-      const newDelivererData = data.data;
-      setDeliverers([...deliverers, newDelivererData]);
-      setFilteredDeliverers([...filteredDeliverers, newDelivererData]);
+      await fetchDeliverers(); // Rafraîchir la liste
       setNewDeliverer({ livreurUserId: "", moyenDeplacement: "" });
       setShowAddDeliverer(false);
       toast.success(data.message);
-      await fetchDeliverers();
     } catch (err) {
       console.error("Error adding deliverer:", err.message);
       toast.error("Erreur lors de l'ajout du livreur");
       await fetchDeliverers();
+    } finally {
+      setLoading(false); // Fin du chargement
     }
   };
 
-  // Modifier un livreur
   const handleEditDeliverer = async () => {
     const token = localStorage.getItem("token");
     const acteurId = localStorage.getItem("logedUserId");
 
-    if (!selectedDeliverer.livreurUserId || !selectedDeliverer.moyenDeplacement) {
+    if (!selectedDeliverer?.livreurUserId || !selectedDeliverer?.moyenDeplacement) {
       toast.error("Veuillez remplir tous les champs obligatoires");
       return;
     }
@@ -258,8 +259,8 @@ export default function DeliveryManagement() {
       isDisponible: true,
       moyenDeplacement: selectedDeliverer.moyenDeplacement,
     };
-    console.log("Selected deliverer:", selectedDeliverer);
-console.log("Deliverer data to update:", delivererData);  
+
+    setLoading(true); // Début du chargement
     try {
       const response = await fetch(
         `http://195.35.24.128:8081/api/livreurs/update`,
@@ -275,27 +276,22 @@ console.log("Deliverer data to update:", delivererData);
 
       if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
       const data = await response.json();
-      const updatedDeliverer = data.data;
-      // setDeliverers(
-      //   deliverers.map((d) => (d.id === updatedDeliverer.id ? updatedDeliverer : d))
-      // );
-      // setFilteredDeliverers(
-      //   filteredDeliverers.map((d) => (d.id === updatedDeliverer.id ? updatedDeliverer : d))
-      // );
+      await fetchDeliverers(); // Rafraîchir la liste
       setShowEditDeliverer(false);
       toast.success(data.message);
-      await fetchDeliverers();
     } catch (err) {
       console.error("Error updating deliverer:", err.message);
       toast.error("Erreur lors de la modification du livreur");
       await fetchDeliverers();
+    } finally {
+      setLoading(false); // Fin du chargement
     }
   };
 
-  // Supprimer un livreur
   const handleDeleteDeliverer = async () => {
     const token = localStorage.getItem("token");
 
+    setLoading(true); // Début du chargement
     try {
       const response = await fetch(
         `http://195.35.24.128:8081/api/livreurs/delete/${selectedDeliverer.id}`,
@@ -303,33 +299,31 @@ console.log("Deliverer data to update:", delivererData);
           method: "DELETE",
           headers: {
             Authorization: `Bearer ${token}`,
-            contentType: "application/json",
+            "Content-Type": "application/json",
           },
         }
       );
 
       if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
-      setDeliverers(deliverers.filter((d) => d.id !== selectedDeliverer.id));
-      setFilteredDeliverers(filteredDeliverers.filter((d) => d.id !== selectedDeliverer.id));
+      await fetchDeliverers(); // Rafraîchir la liste
       setShowDeleteDeliverer(false);
       const data = await response.json();
       toast.success(data.message);
-      await fetchDeliverers(); // Recharger la liste des livreurs après suppression
     } catch (err) {
       console.error("Error deleting deliverer:", err.message);
       toast.error("Erreur lors de la suppression du livreur");
       await fetchDeliverers();
+    } finally {
+      setLoading(false); // Fin du chargement
     }
   };
 
-  // Réinitialiser la recherche lors du changement d'onglet
   useEffect(() => {
     setSearchQuery("");
     setFilteredDeliverers(deliverers);
     setFilteredOrders(orders);
   }, [activeTab, deliverers, orders]);
 
-  // Badge de statut pour les paniers
   const getStatusBadge = (isApproved) => {
     if (isApproved === null) {
       return (
@@ -352,16 +346,14 @@ console.log("Deliverer data to update:", delivererData);
     }
   };
 
-  // Calculer le montant total d'un panier
   const calculateTotalAmount = (produits) => {
     return produits.reduce((total, produit) => total + produit.quantite * produit.prix, 0);
   };
 
-  // Formatter la devise
   const formatCurrency = (amount) => {
     return new Intl.NumberFormat("fr-FR", {
       style: "currency",
-      currency: "XOF", // Adapté à votre contexte, ajustez si nécessaire
+      currency: "XOF",
     }).format(amount);
   };
 
@@ -372,7 +364,16 @@ console.log("Deliverer data to update:", delivererData);
         <p className="text-gray-500 mt-1">Gérez les livreurs et les paniers en cours</p>
       </div>
 
-      {/* Statistiques */}
+      <Toaster /> {/* Ajout pour afficher les notifications */}
+      {loading && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white p-4 rounded-lg flex items-center space-x-2">
+            <Loader2 className="h-6 w-6 animate-spin text-gray-600" />
+            <span className="text-gray-600">Traitement en cours...</span>
+          </div>
+        </div>
+      )}
+
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <Card className="bg-yellow-50 border-yellow-200">
           <CardContent className="pt-6">
@@ -394,7 +395,7 @@ console.log("Deliverer data to update:", delivererData);
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-blue-800">En cours</p>
-                <h3 className="text-2xl font-bold text-blue-900 mt-1">0</h3> {/* À adapter si vous avez un statut "en cours" */}
+                <h3 className="text-2xl font-bold text-blue-900 mt-1">0</h3>
               </div>
               <div className="h-12 w-12 bg-blue-200 rounded-full flex items-center justify-center text-blue-700">
                 <LocateFixed className="h-6 w-6" />
@@ -407,7 +408,7 @@ console.log("Deliverer data to update:", delivererData);
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-green-800">Livrées</p>
-                <h3 className="text-2xl font-bold text-green-900 mt-1">0</h3> {/* À adapter si vous avez un statut "livré" */}
+                <h3 className="text-2xl font-bold text-green-900 mt-1">0</h3>
               </div>
               <div className="h-12 w-12 bg-green-200 rounded-full flex items-center justify-center text-green-700">
                 <CheckCircle className="h-6 w-6" />
@@ -417,14 +418,12 @@ console.log("Deliverer data to update:", delivererData);
         </Card>
       </div>
 
-      {/* Onglets */}
       <Tabs defaultValue="deliverers" className="space-y-4" onValueChange={setActiveTab}>
         <TabsList className="grid w-full grid-cols-2">
           <TabsTrigger value="deliverers">Livreurs</TabsTrigger>
           <TabsTrigger value="orders">Paniers</TabsTrigger>
         </TabsList>
 
-        {/* Onglet Livreurs */}
         <TabsContent value="deliverers" className="space-y-4">
           <Card>
             <CardHeader className="pb-2">
@@ -444,11 +443,12 @@ console.log("Deliverer data to update:", delivererData);
                       className="pl-8 w-full sm:w-[260px]"
                       value={searchQuery}
                       onChange={handleSearchDeliverers}
+                      disabled={loading}
                     />
                   </div>
                   <Dialog open={showAddDeliverer} onOpenChange={setShowAddDeliverer}>
                     <DialogTrigger asChild>
-                      <Button className="whitespace-nowrap">
+                      <Button className="whitespace-nowrap" disabled={loading}>
                         <Plus className="h-4 w-4 mr-2" />
                         Ajouter un livreur
                       </Button>
@@ -468,6 +468,7 @@ console.log("Deliverer data to update:", delivererData);
                             onValueChange={(value) =>
                               setNewDeliverer({ ...newDeliverer, livreurUserId: value })
                             }
+                            disabled={loading}
                           >
                             <SelectTrigger className="w-full">
                               <SelectValue placeholder="Sélectionner un livreur" />
@@ -490,6 +491,7 @@ console.log("Deliverer data to update:", delivererData);
                             onValueChange={(value) =>
                               setNewDeliverer({ ...newDeliverer, moyenDeplacement: value })
                             }
+                            disabled={loading}
                           >
                             <SelectTrigger className="w-full">
                               <SelectValue placeholder="Sélectionner un moyen" />
@@ -507,10 +509,12 @@ console.log("Deliverer data to update:", delivererData);
                         </div>
                       </div>
                       <DialogFooter>
-                        <Button variant="outline" onClick={() => setShowAddDeliverer(false)}>
+                        <Button variant="outline" onClick={() => setShowAddDeliverer(false)} disabled={loading}>
                           Annuler
                         </Button>
-                        <Button onClick={handleAddDeliverer}>Ajouter le livreur</Button>
+                        <Button onClick={handleAddDeliverer} disabled={loading}>
+                          {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Ajouter le livreur"}
+                        </Button>
                       </DialogFooter>
                     </DialogContent>
                   </Dialog>
@@ -546,7 +550,7 @@ console.log("Deliverer data to update:", delivererData);
                           <TableCell className="text-right">
                             <DropdownMenu>
                               <DropdownMenuTrigger asChild>
-                                <Button variant="ghost" className="h-8 w-8 p-0">
+                                <Button variant="ghost" className="h-8 w-8 p-0" disabled={loading}>
                                   <span className="sr-only">Ouvrir le menu</span>
                                   <MoreVertical className="h-4 w-4" />
                                 </Button>
@@ -603,7 +607,6 @@ console.log("Deliverer data to update:", delivererData);
           </Card>
         </TabsContent>
 
-        {/* Onglet Paniers */}
         <TabsContent value="orders" className="space-y-4">
           <Card>
             <CardHeader className="pb-2">
@@ -622,6 +625,7 @@ console.log("Deliverer data to update:", delivererData);
                     className="pl-8 w-full sm:w-[260px]"
                     value={searchQuery}
                     onChange={handleSearchOrders}
+                    disabled={loading}
                   />
                 </div>
               </div>
@@ -655,7 +659,7 @@ console.log("Deliverer data to update:", delivererData);
                           <TableCell className="text-right">
                             <DropdownMenu>
                               <DropdownMenuTrigger asChild>
-                                <Button variant="ghost" className="h-8 w-8 p-0">
+                                <Button variant="ghost" className="h-8 w-8 p-0" disabled={loading}>
                                   <span className="sr-only">Ouvrir le menu</span>
                                   <MoreVertical className="h-4 w-4" />
                                 </Button>
@@ -666,7 +670,7 @@ console.log("Deliverer data to update:", delivererData);
                                 <DropdownMenuItem
                                   onClick={() => {
                                     toast.success(`Détails du panier #${order.id}`);
-                                    console.log(order); // Ajouter un dialog pour les détails si nécessaire
+                                    console.log(order);
                                   }}
                                 >
                                   <Package2 className="mr-2 h-4 w-4" />
@@ -692,7 +696,6 @@ console.log("Deliverer data to update:", delivererData);
         </TabsContent>
       </Tabs>
 
-      {/* Dialog Détails Livreur */}
       <Dialog open={showDelivererDetails} onOpenChange={setShowDelivererDetails}>
         <DialogContent className="sm:max-w-[550px]">
           <DialogHeader>
@@ -743,78 +746,57 @@ console.log("Deliverer data to update:", delivererData);
             </div>
           )}
           <DialogFooter>
-            <Button variant="outline" onClick={() => setShowDelivererDetails(false)}>
+            <Button variant="outline" onClick={() => setShowDelivererDetails(false)} disabled={loading}>
               Fermer
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
-      {/* Dialog Modifier Livreur */}
       <Dialog open={showEditDeliverer} onOpenChange={setShowEditDeliverer}>
-          <DialogContent className="sm:max-w-[500px]">
-            <DialogHeader>
-              <DialogTitle>Modifier le livreur</DialogTitle>
-              <DialogDescription>Modifiez les informations du livreur ci-dessous.</DialogDescription>
-            </DialogHeader>
-            {selectedDeliverer && (
-              <div className="grid gap-4 py-4">
-                {/* <div className="flex flex-col gap-2">
-                  <Label htmlFor="livreurUserId">Livreur</Label>
-                  <Select
-                    value={selectedDeliverer.id} // Utiliser livreurUserId au lieu de id
-                    onValueChange={(value) =>
-                      setSelectedDeliverer({ ...selectedDeliverer, id: value })
-                    }
-                  >
-                    <SelectTrigger className="w-full">
-                      <SelectValue placeholder="Sélectionner un livreur" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {users
-                        .filter((u) => u.role === "LIVREUR")
-                        .map((deliverer) => (
-                          <SelectItem key={deliverer.id} value={deliverer.id.toString()}>
-                            {deliverer.prenom} {deliverer.nom} ({deliverer.email})
-                          </SelectItem>
-                        ))}
-                    </SelectContent>
-                  </Select>
-                </div> */}
-                <div className="flex flex-col gap-2">
-                  <Label htmlFor="moyenDeplacement">Moyen de déplacement</Label>
-                  <Select
-                    value={selectedDeliverer.moyenDeplacement}
-                    onValueChange={(value) =>
-                      setSelectedDeliverer({ ...selectedDeliverer, moyenDeplacement: value })
-                    }
-                  >
-                    <SelectTrigger className="w-full">
-                      <SelectValue placeholder="Sélectionner un moyen" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Moto">Moto</SelectItem>
-                      <SelectItem value="Voiture">Voiture</SelectItem>
-                      <SelectItem value="Camion">Camion</SelectItem>
-                      <SelectItem value="Scooter">Scooter</SelectItem>
-                      <SelectItem value="Vélo">Vélo</SelectItem>
-                      <SelectItem value="Trotinette">Trotinette</SelectItem>
-                      <SelectItem value="À pied">À pied</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle>Modifier le livreur</DialogTitle>
+            <DialogDescription>Modifiez les informations du livreur ci-dessous.</DialogDescription>
+          </DialogHeader>
+          {selectedDeliverer && (
+            <div className="grid gap-4 py-4">
+              <div className="flex flex-col gap-2">
+                <Label htmlFor="moyenDeplacement">Moyen de déplacement</Label>
+                <Select
+                  value={selectedDeliverer.moyenDeplacement}
+                  onValueChange={(value) =>
+                    setSelectedDeliverer({ ...selectedDeliverer, moyenDeplacement: value })
+                  }
+                  disabled={loading}
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Sélectionner un moyen" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Moto">Moto</SelectItem>
+                    <SelectItem value="Voiture">Voiture</SelectItem>
+                    <SelectItem value="Camion">Camion</SelectItem>
+                    <SelectItem value="Scooter">Scooter</SelectItem>
+                    <SelectItem value="Vélo">Vélo</SelectItem>
+                    <SelectItem value="Trotinette">Trotinette</SelectItem>
+                    <SelectItem value="À pied">À pied</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
-            )}
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setShowEditDeliverer(false)}>
-                Annuler
-              </Button>
-              <Button onClick={handleEditDeliverer}>Enregistrer les modifications</Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowEditDeliverer(false)} disabled={loading}>
+              Annuler
+            </Button>
+            <Button onClick={handleEditDeliverer} disabled={loading}>
+              {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Enregistrer les modifications"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
-      {/* Dialog Supprimer Livreur */}
       <Dialog open={showDeleteDeliverer} onOpenChange={setShowDeleteDeliverer}>
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
@@ -824,11 +806,11 @@ console.log("Deliverer data to update:", delivererData);
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setShowDeleteDeliverer(false)}>
+            <Button variant="outline" onClick={() => setShowDeleteDeliverer(false)} disabled={loading}>
               Annuler
             </Button>
-            <Button variant="destructive" onClick={handleDeleteDeliverer}>
-              Supprimer
+            <Button variant="destructive" onClick={handleDeleteDeliverer} disabled={loading}>
+              {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Supprimer"}
             </Button>
           </DialogFooter>
         </DialogContent>

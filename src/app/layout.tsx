@@ -2,6 +2,7 @@
   import localFont from "next/font/local";
   import "./globals.css";
   import ClientLayout from "./ClientLayout";
+  import SessionManager from "@/components/SessionManager"
 
   const geistSans = localFont({
     src: "./fonts/GeistVF.woff",
@@ -29,7 +30,9 @@
         <body
           className={`${geistSans.variable} ${geistMono.variable} antialiased`}
         >
-          <ClientLayout>{children}</ClientLayout>
+          <SessionManager>
+            <ClientLayout>{children}</ClientLayout>
+            </SessionManager>
         </body>
       </html>
     );

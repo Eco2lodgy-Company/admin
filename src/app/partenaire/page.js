@@ -20,8 +20,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Users, Plus, Search, Edit, Trash, Building, X } from "lucide-react";
+import { Users, Plus, Search, Edit, Trash, Building, X, Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import { Toaster } from "@/components/ui/sonner"; // Ajout pour les notifications
 
 const Partners = () => {
   const [partners, setPartners] = useState([]);
@@ -48,14 +49,12 @@ const Partners = () => {
     longitude: 0,
     latitude: 0,
   });
+  const [loading, setLoading] = useState(false); // Nouvel état pour le chargement
 
-  // Fetch partners from the API
- 
-  
   const fetchPartners = async () => {
     const token = localStorage.getItem("token");
     const id = localStorage.getItem("username");
-   
+    setLoading(true); // Début du chargement
     try {
       const response = await fetch(
         `http://195.35.24.128:8081/api/partenaires/liste?username=${id}`,
@@ -75,14 +74,16 @@ const Partners = () => {
       const data = await response.json();
       setPartners(data.data || []);
       console.log("Partners fetched:", data.data);
-      // toast.success(data.message);
     } catch (err) {
       console.error("Error fetching partners:", err.message);
       toast.error("Erreur lors de la récupération des partenaires");
+    } finally {
+      setLoading(false); // Fin du chargement
     }
   };
+
   useEffect(() => {
-       fetchPartners();
+    fetchPartners();
   }, []);
 
   const filteredPartners = partners.filter(
@@ -93,9 +94,7 @@ const Partners = () => {
 
   const handleDelete = async (id) => {
     const token = localStorage.getItem("token");
-    console.log("Token:", token);
-    console.log("ID:", id);
-
+    setLoading(true); // Début du chargement
     try {
       const response = await fetch(
         `http://195.35.24.128:8081/api/partenaires/delete/${id}`,
@@ -103,7 +102,6 @@ const Partners = () => {
           method: "DELETE",
           headers: {
             Authorization: `Bearer ${token}`,
-            // "Content-Type": "application/json",
           },
         }
       );
@@ -112,13 +110,14 @@ const Partners = () => {
         throw new Error(`HTTP error! Status: ${response.status}`);
       }
 
-      setPartners(partners.filter((partner) => partner.id !== id));
+      await fetchPartners(); // Rafraîchir la liste
       toast.success("Partenaire supprimé avec succès");
-      fetchPartners();
     } catch (err) {
       console.error("Error deleting partner:", err.message);
       toast.error("Erreur lors de la suppression du partenaire");
-      fetchPartners();
+      await fetchPartners();
+    } finally {
+      setLoading(false); // Fin du chargement
     }
   };
 
@@ -193,8 +192,8 @@ const Partners = () => {
       ...addFormData,
       adminId: adminId,
     };
-    console.log("Partner to send:", partnerToSend);
 
+    setLoading(true); // Début du chargement
     try {
       const response = await fetch(`http://195.35.24.128:8081/api/partenaires/new`, {
         method: "POST",
@@ -210,14 +209,15 @@ const Partners = () => {
       }
 
       const data = await response.json();
-      setPartners([...partners, data.data]);
+      await fetchPartners(); // Rafraîchir la liste
       toast.success(data.message);
       setShowAddForm(false);
-      fetchPartners();
     } catch (err) {
       console.error("Error adding partner:", err.message);
       toast.error("Erreur lors de l'ajout du partenaire");
-      fetchPartners();
+      await fetchPartners();
+    } finally {
+      setLoading(false); // Fin du chargement
     }
   };
 
@@ -243,6 +243,7 @@ const Partners = () => {
       adminId: adminId,
     };
 
+    setLoading(true); // Début du chargement
     try {
       const response = await fetch(
         `http://195.35.24.128:8081/api/partenaires/update`,
@@ -261,30 +262,37 @@ const Partners = () => {
       }
 
       const data = await response.json();
-      const updatedPartners = partners.map((partner) =>
-        partner.id === editFormData.id ? data.data : partner
-      );
-      setPartners(updatedPartners);
+      await fetchPartners(); // Rafraîchir la liste
       toast.success(data.message);
       setShowEditForm(false);
-      fetchPartners();
     } catch (err) {
       console.error("Error updating partner:", err.message);
       toast.error("Erreur lors de la mise à jour du partenaire");
-      fetchPartners();
+      await fetchPartners();
+    } finally {
+      setLoading(false); // Fin du chargement
     }
   };
 
   return (
     <div className="space-y-6">
+      <Toaster /> {/* Ajout pour afficher les notifications */}
+      {loading && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white p-4 rounded-lg flex items-center space-x-2">
+            <Loader2 className="h-6 w-6 animate-spin text-gray-600" />
+            <span className="text-gray-600">Traitement en cours...</span>
+          </div>
+        </div>
+      )}
+
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-bold">Gestion des Partenaires</h1>
-        <Button className="flex items-center gap-2" onClick={handleAdd}>
+        <Button className="flex items-center gap-2" onClick={handleAdd} disabled={loading}>
           <Plus size={16} /> Ajouter un partenaire
         </Button>
       </div>
 
-      {/* Carte principale avec tableau des partenaires */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
@@ -302,6 +310,7 @@ const Partners = () => {
               className="pl-9"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
+              disabled={loading}
             />
           </div>
         </CardHeader>
@@ -338,6 +347,7 @@ const Partners = () => {
                           variant="outline"
                           size="icon"
                           onClick={() => handleEdit(partner)}
+                          disabled={loading}
                         >
                           <Edit className="h-4 w-4" />
                         </Button>
@@ -345,6 +355,7 @@ const Partners = () => {
                           variant="destructive"
                           size="icon"
                           onClick={() => handleDelete(partner.id)}
+                          disabled={loading}
                         >
                           <Trash className="h-4 w-4" />
                         </Button>
@@ -370,7 +381,6 @@ const Partners = () => {
         </CardFooter>
       </Card>
 
-      {/* Overlay et formulaire d'ajout */}
       {showAddForm && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <Card className="max-w-md w-full">
@@ -384,6 +394,7 @@ const Partners = () => {
                   variant="ghost"
                   size="icon"
                   onClick={() => setShowAddForm(false)}
+                  disabled={loading}
                 >
                   <X className="h-5 w-5" />
                 </Button>
@@ -403,6 +414,7 @@ const Partners = () => {
                       value={addFormData.nom}
                       onChange={handleAddFormChange}
                       required
+                      disabled={loading}
                     />
                   </div>
                   <div className="space-y-2">
@@ -413,6 +425,7 @@ const Partners = () => {
                       value={addFormData.prenom}
                       onChange={handleAddFormChange}
                       required
+                      disabled={loading}
                     />
                   </div>
                   <div className="space-y-2 md:col-span-2">
@@ -424,6 +437,7 @@ const Partners = () => {
                       value={addFormData.email}
                       onChange={handleAddFormChange}
                       required
+                      disabled={loading}
                     />
                   </div>
                   <div className="space-y-2 md:col-span-2">
@@ -434,6 +448,7 @@ const Partners = () => {
                       value={addFormData.adresse}
                       onChange={handleAddFormChange}
                       required
+                      disabled={loading}
                     />
                   </div>
                   <div className="space-y-2">
@@ -444,6 +459,7 @@ const Partners = () => {
                       value={addFormData.telephone}
                       onChange={handleAddFormChange}
                       required
+                      disabled={loading}
                     />
                   </div>
                   <div className="space-y-2">
@@ -454,6 +470,7 @@ const Partners = () => {
                       type="number"
                       value={addFormData.longitude}
                       onChange={handleAddFormChange}
+                      disabled={loading}
                     />
                   </div>
                   <div className="space-y-2">
@@ -464,6 +481,7 @@ const Partners = () => {
                       type="number"
                       value={addFormData.latitude}
                       onChange={handleAddFormChange}
+                      disabled={loading}
                     />
                   </div>
                 </div>
@@ -472,10 +490,13 @@ const Partners = () => {
                     variant="outline"
                     type="button"
                     onClick={() => setShowAddForm(false)}
+                    disabled={loading}
                   >
                     Annuler
                   </Button>
-                  <Button type="submit">Ajouter</Button>
+                  <Button type="submit" disabled={loading}>
+                    {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Ajouter"}
+                  </Button>
                 </div>
               </form>
             </CardContent>
@@ -483,7 +504,6 @@ const Partners = () => {
         </div>
       )}
 
-      {/* Overlay et formulaire de modification */}
       {showEditForm && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <Card className="max-w-md w-full">
@@ -497,6 +517,7 @@ const Partners = () => {
                   variant="ghost"
                   size="icon"
                   onClick={() => setShowEditForm(false)}
+                  disabled={loading}
                 >
                   <X className="h-5 w-5" />
                 </Button>
@@ -516,6 +537,7 @@ const Partners = () => {
                       value={editFormData.nom}
                       onChange={handleEditFormChange}
                       required
+                      disabled={loading}
                     />
                   </div>
                   <div className="space-y-2">
@@ -526,6 +548,7 @@ const Partners = () => {
                       value={editFormData.prenom}
                       onChange={handleEditFormChange}
                       required
+                      disabled={loading}
                     />
                   </div>
                   <div className="space-y-2 md:col-span-2">
@@ -537,6 +560,7 @@ const Partners = () => {
                       value={editFormData.email}
                       onChange={handleEditFormChange}
                       required
+                      disabled={loading}
                     />
                   </div>
                   <div className="space-y-2 md:col-span-2">
@@ -547,6 +571,7 @@ const Partners = () => {
                       value={editFormData.adresse}
                       onChange={handleEditFormChange}
                       required
+                      disabled={loading}
                     />
                   </div>
                   <div className="space-y-2">
@@ -557,6 +582,7 @@ const Partners = () => {
                       value={editFormData.telephone}
                       onChange={handleEditFormChange}
                       required
+                      disabled={loading}
                     />
                   </div>
                   <div className="space-y-2">
@@ -567,6 +593,7 @@ const Partners = () => {
                       type="number"
                       value={editFormData.longitude}
                       onChange={handleEditFormChange}
+                      disabled={loading}
                     />
                   </div>
                   <div className="space-y-2">
@@ -577,6 +604,7 @@ const Partners = () => {
                       type="number"
                       value={editFormData.latitude}
                       onChange={handleEditFormChange}
+                      disabled={loading}
                     />
                   </div>
                 </div>
@@ -585,10 +613,13 @@ const Partners = () => {
                     variant="outline"
                     type="button"
                     onClick={() => setShowEditForm(false)}
+                    disabled={loading}
                   >
                     Annuler
                   </Button>
-                  <Button type="submit">Mettre à jour</Button>
+                  <Button type="submit" disabled={loading}>
+                    {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Mettre à jour"}
+                  </Button>
                 </div>
               </form>
             </CardContent>

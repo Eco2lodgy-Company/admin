@@ -1,6 +1,6 @@
 "use client";
 import React, { useState, useEffect, useRef } from 'react';
-
+import { useRouter } from 'next/navigation'; // Ajout de useRouter pour la redirection
 import {
   ChevronLeft,
   ChevronRight,
@@ -48,81 +48,76 @@ const SIDEBAR = () => {
   const [activePath, setActivePath] = useState('');
   const activeItemRef = useRef(null);
   const navRef = useRef(null);
+  const router = useRouter(); // Initialisation du router
 
   useEffect(() => {
-    // Récupérer le chemin actuel
     const path = window.location.pathname;
     setActivePath(path);
 
-    // Vérifier si l'écran est mobile au chargement
     const checkIfMobile = () => {
-      setIsMobile(window.innerWidth < 768); // 768px est généralement considéré comme le breakpoint pour les mobiles
-      
-      // Sur mobile, fermez la sidebar par défaut
+      setIsMobile(window.innerWidth < 768);
       if (window.innerWidth < 768) {
         setExpanded(false);
       }
     };
 
-    // Vérifier à l'initialisation
     checkIfMobile();
-
-    // Ajouter un écouteur pour vérifier lors du redimensionnement
     window.addEventListener('resize', checkIfMobile);
-
-    // Nettoyer l'écouteur lors du démontage du composant
-    return () => {
-      window.removeEventListener('resize', checkIfMobile);
-    };
+    return () => window.removeEventListener('resize', checkIfMobile);
   }, []);
 
-  // Effet pour scroller vers l'élément actif après le rendu
   useEffect(() => {
     if (activeItemRef.current && navRef.current) {
-      // Délai pour s'assurer que le DOM est complètement rendu
       setTimeout(() => {
-        // Calculer la position pour centrer l'élément actif dans la vue
         const containerHeight = navRef.current.clientHeight;
         const itemPosition = activeItemRef.current.offsetTop;
         const itemHeight = activeItemRef.current.clientHeight;
-        
-        // Centrer l'élément dans la vue
         navRef.current.scrollTop = itemPosition - (containerHeight / 2) + (itemHeight / 2);
       }, 100);
     }
   }, [activePath, expanded, mobileMenuOpen]);
 
-  // Ajout des compteurs à chaque élément du menu
-  const menuItems = [
-    { icon: LayoutDashboard, label: 'Dashboard', href: '/dashboard'},
-    { icon: Users, label: 'Utilisateurs', href: '/users', count: 42 },
-    { icon: Truck, label: 'Livraisons', href: '/deliver', count: 12 },
-    { icon: Tags, label: 'Tarifs des Courses', href: '/tarif', count: 12 },
-    { icon: ShoppingCart, label: 'Boutiques', href: '/shops', count: 8 },
-    { icon: Package, label: 'Produits', href: '/products', count: 25 },
-    { icon: Tag, label: 'Categories', href: '/category', count: 25 },
-    { icon: Building, label: 'Partenaires', href: '/partenaire', count: 25 },
-    { icon: ShoppingBag, label: 'Commandes des Partenaires', href: '/commandes', count: 25 },
-    { icon: BarChart, label: 'Statistiques', href: '/analytics', count: 0 },
-    { icon: CreditCard, label: 'Paiements', href: '/payments', count: 7 },
-    { icon: Bell, label: 'Notifications', href: '/notifications', count: 33 },
-    { icon: Percent, label: 'Promotion', href: '/promotion', count: 4 },
-    { icon: Image, label: 'Publicite', href: '/pub', count: 4 },
-    { icon: Settings, label: 'Paramètres', href: '/settings', count: 0 },
-    { icon: LifeBuoy, label: 'Support', href: '/support', count: 2 },
-    { icon: HelpCircle, label: 'FAQ', href: '/faq', count: 2 },
-  ];
+  // Fonction de déconnexion
+  const handleLogout = () => {
+    // Nettoyer le localStorage
+    localStorage.removeItem("token");
+    localStorage.removeItem("tokenExpiresAt");
+    localStorage.removeItem("username");
+    localStorage.removeItem("logedUserId");
+    // Ou utiliser localStorage.clear() pour tout supprimer
 
-  // Vérifier si un élément du menu est actif
-  const isActive = (href) => {
-    return activePath === href;
+    // Fermer le menu mobile si ouvert
+    setMobileMenuOpen(false);
+    
+    // Rediriger vers la page de login
+    router.push('/');
   };
 
-  // Version mobile: bouton hamburger et menu modal
+  const menuItems = [
+    { icon: LayoutDashboard, label: 'Dashboard', href: '/dashboard' },
+    { icon: Users, label: 'Utilisateurs', href: '/users' },
+    { icon: Truck, label: 'Livraisons', href: '/deliver' },
+    { icon: Tags, label: 'Tarifs des Courses', href: '/tarif' },
+    { icon: ShoppingCart, label: 'Boutiques', href: '/shops' },
+    { icon: Package, label: 'Produits', href: '/products' },
+    { icon: Tag, label: 'Categories', href: '/category' },
+    { icon: Building, label: 'Partenaires', href: '/partenaire' },
+    { icon: ShoppingBag, label: 'Commandes des Partenaires', href: '/commandes' },
+    { icon: BarChart, label: 'Statistiques', href: '/analytics' },
+    { icon: CreditCard, label: 'Paiements', href: '/payments' },
+    { icon: Percent, label: 'Promotion', href: '/promotion' },
+    { icon: Image, label: 'Publicite', href: '/pub' },
+    { icon: Settings, label: 'Paramètres', href: '/settings' },
+    { icon: LifeBuoy, label: 'Support', href: '/support' },
+    { icon: HelpCircle, label: 'FAQ', href: '/faq' },
+  ];
+
+  const isActive = (href) => activePath === href;
+
+  // Version mobile
   if (isMobile) {
     return (
       <>
-        {/* Bouton hamburger en haut de l'écran */}
         <button
           onClick={() => setMobileMenuOpen(true)}
           className="fixed top-4 left-4 z-50 p-2 bg-slate-900 text-white rounded-md shadow-md"
@@ -130,11 +125,9 @@ const SIDEBAR = () => {
           <Menu size={24} />
         </button>
 
-        {/* Menu mobile (modal) */}
         {mobileMenuOpen && (
           <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex">
             <div className="bg-slate-900 text-white w-64 h-full overflow-y-auto">
-              {/* En-tête avec logo et bouton de fermeture */}
               <div className="flex items-center p-4 border-b border-slate-700">
                 <div className="bg-blue-600 h-10 w-10 rounded-md flex items-center justify-center text-white font-bold text-xl">
                   DR
@@ -148,23 +141,17 @@ const SIDEBAR = () => {
                 </button>
               </div>
 
-              {/* Menu principal */}
               <nav className="flex-1 pt-4" ref={navRef}>
                 <ul className="space-y-2 px-2">
                   {menuItems.map((item, index) => {
                     const active = isActive(item.href);
                     return (
-                      <li 
-                        key={index} 
-                        ref={active ? activeItemRef : null}
-                      >
+                      <li key={index} ref={active ? activeItemRef : null}>
                         <a
                           href={item.href}
                           className={cn(
                             "flex items-center p-3 rounded-md transition-colors",
-                            active 
-                              ? "bg-blue-600 text-white" 
-                              : "hover:bg-slate-800 text-slate-200"
+                            active ? "bg-blue-600 text-white" : "hover:bg-slate-800 text-slate-200"
                           )}
                           onClick={() => setMobileMenuOpen(false)}
                         >
@@ -173,9 +160,7 @@ const SIDEBAR = () => {
                           {item.count > 0 && (
                             <span className={cn(
                               "ml-auto text-xs font-medium px-2 py-1 rounded-full",
-                              active 
-                                ? "bg-white text-blue-600" 
-                                : "bg-blue-600 text-white"
+                              active ? "bg-white text-blue-600" : "bg-blue-600 text-white"
                             )}>
                               {item.count}
                             </span>
@@ -187,9 +172,11 @@ const SIDEBAR = () => {
                 </ul>
               </nav>
 
-              {/* Bouton de déconnexion */}
               <div className="p-4 border-t border-slate-700 mt-auto">
-                <button className="flex items-center p-3 w-full rounded-md hover:bg-slate-800 transition-colors">
+                <button 
+                  onClick={handleLogout}
+                  className="flex items-center p-3 w-full rounded-md hover:bg-slate-800 transition-colors"
+                >
                   <LogOut size={20} className="text-slate-300" />
                   <span className="ml-3 text-slate-200">Déconnexion</span>
                 </button>
@@ -201,13 +188,12 @@ const SIDEBAR = () => {
     );
   }
 
-  // Version desktop: sidebar fixe
+  // Version desktop
   return (
     <div className={cn(
       "h-screen flex flex-col bg-slate-900 text-white transition-all duration-300 fixed left-0 top-0 bottom-0",
       expanded ? "w-64" : "w-20"
     )}>
-      {/* Logo et titre */}
       <div className="flex items-center p-4 border-b border-slate-700">
         <div className="bg-blue-600 h-10 w-10 rounded-md flex items-center justify-center text-white font-bold text-xl">
           DR
@@ -223,24 +209,17 @@ const SIDEBAR = () => {
         </button>
       </div>
 
-      {/* Menu principal avec scrolling */}
       <nav className="flex-1 pt-4 overflow-y-auto" ref={navRef}>
         <ul className="space-y-2 px-2">
           {menuItems.map((item, index) => {
             const active = isActive(item.href);
             return (
-              <li 
-                key={index} 
-                ref={active ? activeItemRef : null}
-                className="relative"
-              >
+              <li key={index} ref={active ? activeItemRef : null} className="relative">
                 <a
                   href={item.href}
                   className={cn(
                     "flex items-center p-3 rounded-md transition-colors",
-                    active 
-                      ? "bg-blue-600 text-white" 
-                      : "hover:bg-slate-800"
+                    active ? "bg-blue-600 text-white" : "hover:bg-slate-800"
                   )}
                 >
                   <item.icon size={20} className={active ? "text-white" : "text-slate-300"} />
@@ -250,9 +229,7 @@ const SIDEBAR = () => {
                       {item.count > 0 && (
                         <span className={cn(
                           "text-xs font-medium px-2 py-1 rounded-full",
-                          active 
-                            ? "bg-white text-blue-600" 
-                            : "bg-blue-600 text-white"
+                          active ? "bg-white text-blue-600" : "bg-blue-600 text-white"
                         )}>
                           {item.count}
                         </span>
@@ -271,9 +248,11 @@ const SIDEBAR = () => {
         </ul>
       </nav>
 
-      {/* Profil admin */}
       <div className="p-4 border-t border-slate-700 mt-auto">
-        <button className="mt-4 flex items-center p-3 w-full rounded-md hover:bg-slate-800 transition-colors">
+        <button 
+          onClick={handleLogout}
+          className="mt-4 flex items-center p-3 w-full rounded-md hover:bg-slate-800 transition-colors"
+        >
           <LogOut size={20} className="text-slate-300" />
           {expanded && (
             <span className="ml-3 text-slate-200">Déconnexion</span>

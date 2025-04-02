@@ -49,27 +49,31 @@ import {
   Package,
   MoreHorizontal,
   Plus,
+  Loader2,
 } from "lucide-react";
 import { toast } from "sonner";
 
-// Fonction utilitaire pour formater les dates avec "/"
+// Fonction pour formater la date pour l'API (yyyy-mm-dd)
 const formatDateForAPI = (date) => {
+  if (!date) return "";
   const d = new Date(date);
   const year = d.getFullYear();
   const month = String(d.getMonth() + 1).padStart(2, "0");
   const day = String(d.getDate()).padStart(2, "0");
-  return `${year}/${month}/${day}`;
+  return `${year}/${month}/${day}`; // Format attendu par l'endpoint
 };
 
-// Fonction utilitaire pour convertir une date avec "/" en format compatible avec <Input type="date">
+// Fonction pour convertir une date API (yyyy/mm/dd) en format compatible avec le date picker (yyyy-mm-dd)
 const formatDateForInput = (date) => {
   if (!date) return "";
-  const [year, month, day] = date.split("/");
-  return `${year}-${month}-${day}`;
+  const d = new Date(date);
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`; // Remplace les / par des - si nécessaire
 };
 
-// Formulaire d'ajout de produit
-const AddProductForm = ({ onClose, onAdd, categories, shops, newProduct, setNewProduct }) => {
+const AddProductForm = ({ onClose, onAdd, categories, shops, newProduct, setNewProduct, loading }) => {
   const handleFormChange = (e) => {
     const { name, value } = e.target;
     setNewProduct({
@@ -139,6 +143,7 @@ const AddProductForm = ({ onClose, onAdd, categories, shops, newProduct, setNewP
               value={newProduct.libelle}
               onChange={handleFormChange}
               required
+              disabled={loading}
             />
           </div>
           <div className="space-y-2">
@@ -150,6 +155,7 @@ const AddProductForm = ({ onClose, onAdd, categories, shops, newProduct, setNewP
               value={newProduct.expiredAt}
               onChange={handleFormChange}
               required
+              disabled={loading}
             />
           </div>
           <div className="space-y-2">
@@ -159,6 +165,7 @@ const AddProductForm = ({ onClose, onAdd, categories, shops, newProduct, setNewP
               onValueChange={(value) =>
                 handleFormChange({ target: { name: "categorieId", value: parseInt(value) || 0 } })
               }
+              disabled={loading}
             >
               <SelectTrigger className="w-full">
                 <SelectValue placeholder="Sélectionner une catégorie" />
@@ -184,6 +191,7 @@ const AddProductForm = ({ onClose, onAdd, categories, shops, newProduct, setNewP
               value={newProduct.prix}
               onChange={handleFormChange}
               required
+              disabled={loading}
             />
           </div>
           <div className="space-y-2">
@@ -193,6 +201,7 @@ const AddProductForm = ({ onClose, onAdd, categories, shops, newProduct, setNewP
               onValueChange={(value) =>
                 handleFormChange({ target: { name: "boutiqueId", value: parseInt(value) || 0 } })
               }
+              disabled={loading}
             >
               <SelectTrigger className="w-full">
                 <SelectValue placeholder="Sélectionner une boutique" />
@@ -217,6 +226,7 @@ const AddProductForm = ({ onClose, onAdd, categories, shops, newProduct, setNewP
               value={newProduct.quantite}
               onChange={handleFormChange}
               required
+              disabled={loading}
             />
           </div>
           <div className="space-y-2">
@@ -227,6 +237,7 @@ const AddProductForm = ({ onClose, onAdd, categories, shops, newProduct, setNewP
               placeholder="Code QR"
               value={newProduct.codeQr}
               onChange={handleFormChange}
+              disabled={loading}
             />
           </div>
           <div className="space-y-2">
@@ -237,6 +248,7 @@ const AddProductForm = ({ onClose, onAdd, categories, shops, newProduct, setNewP
               type="file"
               accept="image/*"
               onChange={handleImageChange}
+              disabled={loading}
             />
           </div>
         </div>
@@ -249,21 +261,23 @@ const AddProductForm = ({ onClose, onAdd, categories, shops, newProduct, setNewP
             value={newProduct.description}
             onChange={handleFormChange}
             required
+            disabled={loading}
           />
         </div>
       </div>
       <DialogFooter>
-        <Button variant="outline" onClick={onClose}>
+        <Button variant="outline" onClick={onClose} disabled={loading}>
           Annuler
         </Button>
-        <Button onClick={handleAddProduct}>Ajouter</Button>
+        <Button onClick={handleAddProduct} disabled={loading}>
+          {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Ajouter"}
+        </Button>
       </DialogFooter>
     </DialogContent>
   );
 };
 
-// Formulaire de modification de produit
-const EditProductForm = ({ onClose, onEdit, categories, shops, currentProduct, setCurrentProduct }) => {
+const EditProductForm = ({ onClose, onEdit, categories, shops, currentProduct, setCurrentProduct, loading }) => {
   const handleFormChange = (e) => {
     const { name, value } = e.target;
     setCurrentProduct({
@@ -337,6 +351,7 @@ const EditProductForm = ({ onClose, onEdit, categories, shops, currentProduct, s
               value={currentProduct.libelle}
               onChange={handleFormChange}
               required
+              disabled={loading}
             />
           </div>
           <div className="space-y-2">
@@ -345,9 +360,10 @@ const EditProductForm = ({ onClose, onEdit, categories, shops, currentProduct, s
               type="date"
               id="expiredAt"
               name="expiredAt"
-              value={currentProduct.expiredAt}
+              value={formatDateForInput(currentProduct.expiredAt)}
               onChange={handleFormChange}
               required
+              disabled={loading}
             />
           </div>
           <div className="space-y-2">
@@ -357,6 +373,7 @@ const EditProductForm = ({ onClose, onEdit, categories, shops, currentProduct, s
               onValueChange={(value) =>
                 handleFormChange({ target: { name: "categorieId", value: parseInt(value) || 0 } })
               }
+              disabled={loading}
             >
               <SelectTrigger className="w-full">
                 <SelectValue placeholder="Sélectionner une catégorie" />
@@ -382,6 +399,7 @@ const EditProductForm = ({ onClose, onEdit, categories, shops, currentProduct, s
               value={currentProduct.prix}
               onChange={handleFormChange}
               required
+              disabled={loading}
             />
           </div>
           <div className="space-y-2">
@@ -391,6 +409,7 @@ const EditProductForm = ({ onClose, onEdit, categories, shops, currentProduct, s
               onValueChange={(value) =>
                 handleFormChange({ target: { name: "boutiqueId", value: parseInt(value) || 0 } })
               }
+              disabled={loading}
             >
               <SelectTrigger className="w-full">
                 <SelectValue placeholder="Sélectionner une boutique" />
@@ -415,6 +434,7 @@ const EditProductForm = ({ onClose, onEdit, categories, shops, currentProduct, s
               value={currentProduct.quantite}
               onChange={handleFormChange}
               required
+              disabled={loading}
             />
           </div>
           <div className="space-y-2">
@@ -425,6 +445,7 @@ const EditProductForm = ({ onClose, onEdit, categories, shops, currentProduct, s
               placeholder="Code QR"
               value={currentProduct.codeQr}
               onChange={handleFormChange}
+              disabled={loading}
             />
           </div>
           <div className="space-y-2">
@@ -435,6 +456,7 @@ const EditProductForm = ({ onClose, onEdit, categories, shops, currentProduct, s
               type="file"
               accept="image/*"
               onChange={handleImageChange}
+              disabled={loading}
             />
             {currentProduct.image && (
               <img
@@ -458,20 +480,22 @@ const EditProductForm = ({ onClose, onEdit, categories, shops, currentProduct, s
             value={currentProduct.description}
             onChange={handleFormChange}
             required
+            disabled={loading}
           />
         </div>
       </div>
       <DialogFooter>
-        <Button variant="outline" onClick={onClose}>
+        <Button variant="outline" onClick={onClose} disabled={loading}>
           Annuler
         </Button>
-        <Button onClick={handleEditProduct}>Enregistrer</Button>
+        <Button onClick={handleEditProduct} disabled={loading}>
+          {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Enregistrer"}
+        </Button>
       </DialogFooter>
     </DialogContent>
   );
 };
 
-// Composant principal
 const ProductManagement = () => {
   const [products, setProducts] = useState([]);
   const [filteredProducts, setFilteredProducts] = useState([]);
@@ -493,12 +517,16 @@ const ProductManagement = () => {
     boutiqueId: 0,
     acteurUsername: "",
   });
-
-  
+  const [loading, setLoading] = useState(false);
+  const [filterType, setFilterType] = useState("all"); // Filtre: all, categorie, boutique, statut
+  const [filterValue, setFilterValue] = useState(""); // Valeur du filtre
+  const [sortField, setSortField] = useState("libelle"); // Champ de tri
+  const [sortOrder, setSortOrder] = useState("asc"); // Ordre: asc, desc
 
   const fetchProducts = async () => {
     const username = localStorage.getItem("username");
-  const token = localStorage.getItem("token");
+    const token = localStorage.getItem("token");
+    setLoading(true);
     try {
       const response = await fetch(
         `http://195.35.24.128:8081/api/products/liste?username=${username}`,
@@ -514,16 +542,18 @@ const ProductManagement = () => {
       const data = await response.json();
       setProducts(data.data);
       setFilteredProducts(data.data);
-      // toast.success(data.message);
     } catch (err) {
       console.error("Error fetching products:", err.message);
       toast.error("Erreur lors de la récupération des produits");
+    } finally {
+      setLoading(false);
     }
   };
 
   const fetchCategories = async () => {
     const username = localStorage.getItem("username");
-  const token = localStorage.getItem("token");
+    const token = localStorage.getItem("token");
+    setLoading(true);
     try {
       const response = await fetch(
         `http://195.35.24.128:8081/api/productCategories/liste?username=${username}`,
@@ -541,12 +571,15 @@ const ProductManagement = () => {
     } catch (err) {
       console.error("Error fetching categories:", err.message);
       toast.error("Erreur lors de la récupération des catégories");
+    } finally {
+      setLoading(false);
     }
   };
 
   const fetchShops = async () => {
     const username = localStorage.getItem("username");
-  const token = localStorage.getItem("token");
+    const token = localStorage.getItem("token");
+    setLoading(true);
     try {
       const response = await fetch(
         `http://195.35.24.128:8081/api/shop/liste?username=${username}`,
@@ -564,20 +597,59 @@ const ProductManagement = () => {
     } catch (err) {
       console.error("Error fetching shops:", err.message);
       toast.error("Erreur lors de la récupération des boutiques");
+    } finally {
+      setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchProducts();
-    fetchCategories();
-    fetchShops();
+    Promise.all([fetchProducts(), fetchCategories(), fetchShops()]);
   }, []);
 
-  const filteredProductsList = products.filter((product) =>
-    product?.libelle?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    product?.categorieIntitule?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    product?.boutiqueNom?.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  // Filtrer et trier les produits
+  const applyFiltersAndSort = () => {
+    let filtered = [...products];
+
+    // Filtrage par recherche
+    filtered = filtered.filter(
+      (product) =>
+        product?.libelle?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        product?.categorieIntitule?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        product?.boutiqueNom?.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+
+    // Filtrage supplémentaire
+    if (filterType === "categorie" && filterValue) {
+      filtered = filtered.filter((product) => product.categorieId === parseInt(filterValue));
+    } else if (filterType === "boutique" && filterValue) {
+      filtered = filtered.filter((product) => product.boutiqueId === parseInt(filterValue));
+    } else if (filterType === "statut" && filterValue) {
+      filtered = filtered.filter((product) => {
+        if (filterValue === "rupture") return product.quantite === 0;
+        if (filterValue === "faible") return product.quantite <= 10 && product.quantite > 0;
+        if (filterValue === "disponible") return product.quantite > 10;
+        return true;
+      });
+    }
+
+    // Tri
+    filtered.sort((a, b) => {
+      if (sortField === "libelle") {
+        return sortOrder === "asc"
+          ? a.libelle.localeCompare(b.libelle)
+          : b.libelle.localeCompare(a.libelle);
+      } else if (sortField === "prix") {
+        return sortOrder === "asc" ? a.prix - b.prix : b.prix - a.prix;
+      } else if (sortField === "quantite") {
+        return sortOrder === "asc" ? a.quantite - b.quantite : b.quantite - a.quantite;
+      }
+      return 0;
+    });
+
+    return filtered;
+  };
+
+  const filteredProductsList = applyFiltersAndSort();
 
   const getStatusBadge = (quantite) => {
     if (quantite === 0) return <Badge variant="destructive">Rupture de stock</Badge>;
@@ -594,7 +666,7 @@ const ProductManagement = () => {
       id: product.id,
       libelle: product.libelle,
       description: product.description,
-      expiredAt: product.expiredAt, // La date est déjà au format YYYY/MM/DD depuis le backend
+      expiredAt: formatDateForInput(product.expiredAt), // Convertir pour le date picker
       prix: product.prix,
       quantite: product.quantite,
       codeQr: product.codeQr,
@@ -608,6 +680,7 @@ const ProductManagement = () => {
 
   const handleDeleteProduct = async (id) => {
     const token = localStorage.getItem("token");
+    setLoading(true);
     try {
       const response = await fetch(
         `http://195.35.24.128:8081/api/products/delete/${id}`,
@@ -618,11 +691,13 @@ const ProductManagement = () => {
       );
       if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
       toast.success("Produit supprimé avec succès");
-      fetchProducts(); // Call fetchProducts after deletion
+      await fetchProducts();
     } catch (err) {
       console.error("Error deleting product:", err.message);
       toast.error("Erreur lors de la suppression du produit");
-      fetchProducts(); // Call fetchProducts even on error to refresh
+      await fetchProducts();
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -640,26 +715,35 @@ const ProductManagement = () => {
       acteurUsername: "",
     });
     setIsAddProductOpen(false);
-    fetchProducts(); // Call fetchProducts after adding
+    fetchProducts();
   };
 
   const handleEditSuccess = (updatedProduct) => {
     setCurrentProduct(null);
     setIsEditProductOpen(false);
-    fetchProducts(); // Call fetchProducts after editing
+    fetchProducts();
   };
 
   return (
     <div className="container mx-auto py-6">
+      <Toaster />
+      {loading && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white p-4 rounded-lg flex items-center space-x-2">
+            <Loader2 className="h-6 w-6 animate-spin text-gray-600" />
+            <span className="text-gray-600">Traitement en cours...</span>
+          </div>
+        </div>
+      )}
+
       <div className="flex justify-between items-center mb-6">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Gestion des Produits</h1>
           <p className="text-gray-500 mt-1">Gérez votre catalogue de produits et les stocks</p>
         </div>
-        <Toaster />
         <Dialog open={isAddProductOpen} onOpenChange={setIsAddProductOpen}>
           <DialogTrigger asChild>
-            <Button onClick={handleOpenAddProduct} className="flex items-center gap-2">
+            <Button onClick={handleOpenAddProduct} className="flex items-center gap-2" disabled={loading}>
               <PlusCircle size={16} />
               <span>Ajouter un produit</span>
             </Button>
@@ -671,6 +755,7 @@ const ProductManagement = () => {
             shops={shops}
             newProduct={newProduct}
             setNewProduct={setNewProduct}
+            loading={loading}
           />
         </Dialog>
       </div>
@@ -693,16 +778,67 @@ const ProductManagement = () => {
             className="pl-8"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
+            disabled={loading}
           />
         </div>
         <div className="flex gap-3">
-          <Button variant="outline" className="flex items-center gap-2">
-            <Filter size={16} />
-            <span>Filtrer</span>
-          </Button>
-          <Button variant="outline" className="flex items-center gap-2">
+          <Select value={filterType} onValueChange={setFilterType} disabled={loading}>
+            <SelectTrigger className="w-[180px]">
+              <SelectValue placeholder="Filtrer par" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Tous</SelectItem>
+              <SelectItem value="categorie">Catégorie</SelectItem>
+              <SelectItem value="boutique">Boutique</SelectItem>
+              <SelectItem value="statut">Statut</SelectItem>
+            </SelectContent>
+          </Select>
+          {filterType !== "all" && (
+            <Select value={filterValue} onValueChange={setFilterValue} disabled={loading}>
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder={`Sélectionner ${filterType}`} />
+              </SelectTrigger>
+              <SelectContent>
+                {filterType === "categorie" &&
+                  categories.map((category) => (
+                    <SelectItem key={category.id} value={category.id.toString()}>
+                      {category.intitule}
+                    </SelectItem>
+                  ))}
+                {filterType === "boutique" &&
+                  shops.map((shop) => (
+                    <SelectItem key={shop.id} value={shop.id.toString()}>
+                      {shop.nom}
+                    </SelectItem>
+                  ))}
+                {filterType === "statut" && (
+                  <>
+                    <SelectItem value="disponible">Disponible</SelectItem>
+                    <SelectItem value="faible">Stock faible</SelectItem>
+                    <SelectItem value="rupture">Rupture</SelectItem>
+                  </>
+                )}
+              </SelectContent>
+            </Select>
+          )}
+          <Select value={sortField} onValueChange={setSortField} disabled={loading}>
+            <SelectTrigger className="w-[180px]">
+              <SelectValue placeholder="Trier par" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="libelle">Nom</SelectItem>
+              <SelectItem value="prix">Prix</SelectItem>
+              <SelectItem value="quantite">Quantité</SelectItem>
+            </SelectContent>
+          </Select>
+          <Button
+            variant="outline"
+            className="flex items-center gap-2"
+            onClick={() => setSortOrder(sortOrder === "asc" ? "desc" : "asc")}
+            disabled={loading}
+          >
             <ArrowUpDown size={16} />
-            <span>Trier</span>
+            <span>{sortOrder === "asc" ? "Croissant" : "Décroissant"}</span>
           </Button>
         </div>
       </div>
@@ -744,6 +880,7 @@ const ProductManagement = () => {
                           variant="ghost"
                           size="icon"
                           onClick={() => handleOpenEditProduct(product)}
+                          disabled={loading}
                         >
                           <Edit size={16} className="text-blue-600" />
                         </Button>
@@ -751,16 +888,18 @@ const ProductManagement = () => {
                           variant="ghost"
                           size="icon"
                           onClick={() => handleDeleteProduct(product.id)}
+                          disabled={loading}
                         >
                           <Trash2 size={16} className="text-red-600" />
                         </Button>
-                        <Button
+                        {/* <Button
                           variant="ghost"
                           size="icon"
                           onClick={() => toast.info(`Options pour ${product.libelle}`)}
+                          disabled={loading}
                         >
                           <MoreHorizontal size={16} />
-                        </Button>
+                        </Button> */}
                       </div>
                     </TableCell>
                   </TableRow>
@@ -791,6 +930,7 @@ const ProductManagement = () => {
             shops={shops}
             currentProduct={currentProduct}
             setCurrentProduct={setCurrentProduct}
+            loading={loading}
           />
         )}
       </Dialog>

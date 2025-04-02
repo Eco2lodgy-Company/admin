@@ -1,5 +1,6 @@
 "use client";
 import React, { useState, useEffect } from "react";
+import { Toaster } from "@/components/ui/sonner"
 import {
   Card,
   CardContent,
@@ -46,6 +47,7 @@ import {
   Save,
   AlertTriangle,
   Clock,
+  Loader2, // Ajout de Loader2 pour les spinners
 } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
@@ -66,12 +68,13 @@ const Advertisements = () => {
   });
   const [startTime, setStartTime] = useState("00:00");
   const [endTime, setEndTime] = useState("23:59");
-  const fetchAds = async () => {
-    
+  const [loading, setLoading] = useState(false); // Ajout de l'état loading
 
+  const fetchAds = async () => {
+    setLoading(true); // Début du chargement
     try {
       const username = localStorage.getItem("username");
-    const token = localStorage.getItem("token");
+      const token = localStorage.getItem("token");
       const response = await fetch(
         `http://195.35.24.128:8081/api/pubs/liste?username=${username}`,
         {
@@ -84,14 +87,17 @@ const Advertisements = () => {
       );
       if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
       const data = await response.json();
-      const validAds = (data.data || []).filter(ad => ad && ad.id);
+      const validAds = (data.data || []).filter((ad) => ad && ad.id);
       setAds(validAds);
-      toast.success("Publicités chargées avec succès");
+      // toast.success(data.message); // Utilisation de data.message
     } catch (err) {
       console.error("Error fetching ads:", err.message);
       toast.error("Erreur lors de la récupération des publicités");
+    } finally {
+      setLoading(false); // Fin du chargement
     }
   };
+
   useEffect(() => {
     fetchAds();
   }, []);
@@ -131,7 +137,7 @@ const Advertisements = () => {
 
   const handleDeleteConfirm = async () => {
     const token = localStorage.getItem("token");
-
+    setLoading(true); // Début du chargement
     try {
       const response = await fetch(
         `http://195.35.24.128:8081/api/pubs/delete/${adToDelete.id}`,
@@ -143,14 +149,17 @@ const Advertisements = () => {
         }
       );
       if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
+      const data = await response.json(); // Récupérer la réponse
       setAds(ads.filter((ad) => ad.id !== adToDelete.id));
       setAdToDelete(null);
-      toast.success("Publicité supprimée avec succès");
-      fetchAds();
+      toast.success(data.message); // Utilisation de data.message
+      await fetchAds();
     } catch (err) {
       console.error("Error deleting ad:", err.message);
       toast.error("Erreur lors de la suppression de la publicité");
-      fetchAds();
+      await fetchAds();
+    } finally {
+      setLoading(false); // Fin du chargement
     }
   };
 
@@ -205,7 +214,7 @@ const Advertisements = () => {
     formDataToSend.append("dateFin", formData.dateFin.toISOString());
 
     console.log("Form data to send (create):", Object.fromEntries(formDataToSend.entries()));
-
+    setLoading(true); // Début du chargement
     try {
       const response = await fetch(`http://195.35.24.128:8081/api/pubs/new`, {
         method: "POST",
@@ -215,7 +224,6 @@ const Advertisements = () => {
         body: formDataToSend,
       });
 
-
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(`HTTP error! Status: ${response.status} - ${errorData.message || "Unknown error"}`);
@@ -224,13 +232,15 @@ const Advertisements = () => {
       const newAd = data.data;
 
       setAds([...ads, newAd]);
-      toast.success(data.message);
+      toast.success(data.message); // Utilisation de data.message
       setIsEditing(false);
-      fetchAds();
+      await fetchAds();
     } catch (err) {
       console.error("Error creating ad:", err.message);
       toast.error(`Erreur lors de l'ajout de la publicité: ${err.message}`);
-      fetchAds();
+      await fetchAds();
+    } finally {
+      setLoading(false); // Fin du chargement
     }
   };
 
@@ -248,13 +258,12 @@ const Advertisements = () => {
     formDataToSend.append("acteurId", id);
 
     console.log("Form data to send (update):", Object.fromEntries(formDataToSend.entries()));
-
+    setLoading(true); // Début du chargement
     try {
       const response = await fetch(`http://195.35.24.128:8081/api/pubs/update`, {
         method: "PUT",
         headers: {
           Authorization: `Bearer ${token}`,
-          contentType: "multipart/form-data",
         },
         body: formDataToSend,
       });
@@ -268,14 +277,15 @@ const Advertisements = () => {
       console.log("API response (update):", data);
       const updatedAd = data.data;
 
-      // setAds(ads.map((ad) => (ad.id === updatedAd.id ? updatedAd : ad)));
-      toast.success(data.message);
+      toast.success(data.message); // Utilisation de data.message
       setIsEditing(false);
-      fetchAds();
+      await fetchAds();
     } catch (err) {
       console.error("Error updating ad:", err.message);
       toast.error(`Erreur lors de la mise à jour de la publicité: ${err.message}`);
-      fetchAds();
+      await fetchAds();
+    } finally {
+      setLoading(false); // Fin du chargement
     }
   };
 
@@ -307,17 +317,26 @@ const Advertisements = () => {
 
   return (
     <div className="container mx-auto py-6 space-y-6">
+      {loading && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white p-4 rounded-lg flex items-center space-x-2">
+            <Loader2 className="h-6 w-6 animate-spin text-gray-600" />
+            <span className="text-gray-600">Traitement en cours...</span>
+          </div>
+        </div>
+      )}
+
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-2xl font-bold">Gestion des Publicités</h1>
           <p className="text-gray-500 mt-1">Programmez et gérez vos campagnes publicitaires</p>
         </div>
-        <Button onClick={handleAddNewAd} className="flex items-center gap-2">
+        <Button onClick={handleAddNewAd} className="flex items-center gap-2" disabled={loading}>
           <Plus size={16} />
           <span>Ajouter une publicité</span>
         </Button>
       </div>
-
+      <Toaster/>
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
@@ -335,7 +354,6 @@ const Advertisements = () => {
                 <TableHead>ID</TableHead>
                 <TableHead>Intitulé</TableHead>
                 <TableHead>Description</TableHead>
-                {/* <TableHead>Image</TableHead> */}
                 <TableHead>Date de début</TableHead>
                 <TableHead>Date de fin</TableHead>
                 <TableHead>Statut</TableHead>
@@ -350,16 +368,6 @@ const Advertisements = () => {
                       <TableCell className="font-medium">{ad.id}</TableCell>
                       <TableCell>{ad.intitule || "-"}</TableCell>
                       <TableCell className="max-w-[200px] truncate">{ad.description || "-"}</TableCell>
-                      {/* <TableCell>
-                        <div className="h-10 w-10 rounded-md bg-gray-100 overflow-hidden">
-                          <img
-                            src={ad.mediaPath ? `http://195.35.24.128:8081${ad.mediaPath}` : "/placeholder.svg"}
-                            alt={ad.intitule || "Publicité"}
-                            className="h-full w-full object-cover"
-                            // onError={(e) => (e.target.src = "/placeholder.svg")}
-                          />
-                        </div>
-                      </TableCell> */}
                       <TableCell>
                         {ad.dateDebut ? format(new Date(ad.dateDebut), "dd/MM/yyyy HH:mm") : "-"}
                       </TableCell>
@@ -380,13 +388,14 @@ const Advertisements = () => {
                       </TableCell>
                       <TableCell className="text-right">
                         <div className="flex justify-end space-x-2">
-                          <Button variant="outline" size="icon" onClick={() => handleEditAd(ad)}>
+                          <Button variant="outline" size="icon" onClick={() => handleEditAd(ad)} disabled={loading}>
                             <Edit className="h-4 w-4" />
                           </Button>
                           <Button
                             variant="destructive"
                             size="icon"
                             onClick={() => setAdToDelete(ad)}
+                            disabled={loading}
                           >
                             <Trash className="h-4 w-4" />
                           </Button>
@@ -397,7 +406,7 @@ const Advertisements = () => {
                 )
               ) : (
                 <TableRow>
-                  <TableCell colSpan={8} className="text-center py-4">
+                  <TableCell colSpan={7} className="text-center py-4">
                     Aucune publicité définie
                   </TableCell>
                 </TableRow>
@@ -421,7 +430,7 @@ const Advertisements = () => {
                   <Image size={20} />
                   <span>{formData.id ? "Modifier la publicité" : "Ajouter une nouvelle publicité"}</span>
                 </div>
-                <Button variant="ghost" size="icon" onClick={() => setIsEditing(false)}>
+                <Button variant="ghost" size="icon" onClick={() => setIsEditing(false)} disabled={loading}>
                   <X size={18} />
                 </Button>
               </CardTitle>
@@ -441,6 +450,7 @@ const Advertisements = () => {
                       value={formData.intitule}
                       onChange={handleFormChange}
                       required
+                      disabled={loading}
                     />
                   </div>
                   <div className="space-y-2">
@@ -450,6 +460,7 @@ const Advertisements = () => {
                       type="file"
                       accept="image/*"
                       onChange={handleFileChange}
+                      disabled={loading}
                     />
                     {formData.mediaPath && !formData.media && (
                       <div className="mt-2">
@@ -457,7 +468,6 @@ const Advertisements = () => {
                           src={`http://195.35.24.128:8081${formData.mediaPath}`}
                           alt="Prévisualisation"
                           className="h-20 w-20 object-cover rounded-md"
-                          // onError={(e) => (e.target.src = "/placeholder.svg")}
                         />
                         <p className="text-sm text-gray-500">Image actuelle</p>
                       </div>
@@ -483,6 +493,7 @@ const Advertisements = () => {
                       onChange={handleFormChange}
                       rows={3}
                       required
+                      disabled={loading}
                     />
                   </div>
                   <div className="space-y-2">
@@ -496,6 +507,7 @@ const Advertisements = () => {
                               "w-full justify-start text-left font-normal",
                               !formData.dateDebut && "text-muted-foreground"
                             )}
+                            disabled={loading}
                           >
                             <CalendarIcon className="mr-2 h-4 w-4" />
                             {formData.dateDebut ? format(formData.dateDebut, "PPP") : <span>Choisir une date</span>}
@@ -508,6 +520,7 @@ const Advertisements = () => {
                             onSelect={(date) => handleDateChange("dateDebut", date)}
                             initialFocus
                             className="pointer-events-auto"
+                            disabled={loading}
                           />
                         </PopoverContent>
                       </Popover>
@@ -516,6 +529,7 @@ const Advertisements = () => {
                         value={startTime}
                         onChange={(e) => handleTimeChange("startTime", e.target.value)}
                         className="w-24"
+                        disabled={loading}
                       />
                     </div>
                   </div>
@@ -530,6 +544,7 @@ const Advertisements = () => {
                               "w-full justify-start text-left font-normal",
                               !formData.dateFin && "text-muted-foreground"
                             )}
+                            disabled={loading}
                           >
                             <CalendarIcon className="mr-2 h-4 w-4" />
                             {formData.dateFin ? format(formData.dateFin, "PPP") : <span>Choisir une date</span>}
@@ -542,6 +557,7 @@ const Advertisements = () => {
                             onSelect={(date) => handleDateChange("dateFin", date)}
                             initialFocus
                             className="pointer-events-auto"
+                            disabled={loading}
                           />
                         </PopoverContent>
                       </Popover>
@@ -550,16 +566,17 @@ const Advertisements = () => {
                         value={endTime}
                         onChange={(e) => handleTimeChange("endTime", e.target.value)}
                         className="w-24"
+                        disabled={loading}
                       />
                     </div>
                   </div>
                 </div>
                 <div className="flex justify-end gap-2 pt-4">
-                  <Button type="button" variant="outline" onClick={() => setIsEditing(false)}>
+                  <Button type="button" variant="outline" onClick={() => setIsEditing(false)} disabled={loading}>
                     Annuler
                   </Button>
-                  <Button type="submit" className="flex items-center gap-2">
-                    <Save size={16} />
+                  <Button type="submit" className="flex items-center gap-2" disabled={loading}>
+                    {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save size={16} />}
                     {formData.id ? "Mettre à jour" : "Ajouter"}
                   </Button>
                 </div>
@@ -582,9 +599,9 @@ const Advertisements = () => {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Annuler</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDeleteConfirm}>
-              Supprimer
+            <AlertDialogCancel disabled={loading}>Annuler</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDeleteConfirm} disabled={loading}>
+              {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Supprimer"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

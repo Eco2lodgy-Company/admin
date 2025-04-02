@@ -28,12 +28,11 @@ import {
   Edit,
   User,
   MessageCircle,
+  Loader2, // Ajout de Loader2 pour les spinners
 } from "lucide-react";
 import { toast } from "sonner";
-// import { stat } from "fs";
-// import { stat } from "fs";
+import { Toaster } from "@/components/ui/sonner"; // Ajout pour les notifications
 
-// Composant principal
 const FAQ = () => {
   const [faqs, setFaqs] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
@@ -44,19 +43,17 @@ const FAQ = () => {
     status: true,
     question: "",
     reponse: "",
-    userId: 0, // Par défaut, à ajuster selon votre logique d'utilisateur
+    userId: 0,
   });
-
-  // Charger les FAQs au montage du composant
-
-  
+  const [loading, setLoading] = useState(false); // Nouvel état pour le chargement
 
   const fetchFAQs = async () => {
     const username = localStorage.getItem("username");
-  const token = localStorage.getItem("token");
+    const token = localStorage.getItem("token");
+    setLoading(true); // Début du chargement
     try {
       const response = await fetch(
-        `http://195.35.24.128:8081/api/faqs/liste?username=${username}`, // À ajuster selon votre endpoint
+        `http://195.35.24.128:8081/api/faqs/liste?username=${username}`,
         {
           method: "GET",
           headers: {
@@ -68,29 +65,28 @@ const FAQ = () => {
       if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
       const data = await response.json();
       setFaqs(data.data || []);
-      toast.success(data.message);
+      // toast.success(data.message);
     } catch (err) {
       console.error("Error fetching FAQs:", err.message);
       toast.error("Erreur lors de la récupération des FAQs");
+    } finally {
+      setLoading(false); // Fin du chargement
     }
   };
-  useEffect(() => {
-       fetchFAQs();
-  }, [setFaqs]);
 
-  // Filtrer les FAQs en fonction de la recherche
+  useEffect(() => {
+    fetchFAQs();
+  }, []);
+
   const filteredFaqs = faqs.filter(
     (faq) =>
       faq?.question?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       faq?.reponse?.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  // Gérer l'ajout d'une nouvelle FAQ
   const handleAddFaq = async () => {
     const token = localStorage.getItem("token");
-    const userId = localStorage.getItem("logedUserId"); // À adapter selon votre gestion d'utilisateur
-    console.log("userId", userId);
-    console.log("token", token);
+    const userId = localStorage.getItem("logedUserId");
 
     if (!currentFaq.question || !currentFaq.reponse) {
       toast.error("La question et la réponse sont obligatoires");
@@ -103,6 +99,7 @@ const FAQ = () => {
       userId: parseInt(userId),
     };
 
+    setLoading(true); // Début du chargement
     try {
       console.log("Adding FAQ with data:", faqData);
       const response = await fetch(`http://195.35.24.128:8081/api/faqs/new`, {
@@ -116,19 +113,19 @@ const FAQ = () => {
 
       if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
       const data = await response.json();
-      setFaqs([...faqs, data.data]);
+      await fetchFAQs(); // Rafraîchir la liste
       setCurrentFaq({ question: "", reponse: "", userId: 0 });
       setIsAddDialogOpen(false);
       toast.success(data.message);
-      fetchFAQs();
     } catch (err) {
       console.error("Error adding FAQ:", err.message);
       toast.error("Erreur lors de l'ajout de la FAQ");
-      fetchFAQs();
+      await fetchFAQs();
+    } finally {
+      setLoading(false); // Fin du chargement
     }
   };
 
-  // Gérer la modification d'une FAQ
   const handleUpdateFaq = async () => {
     const token = localStorage.getItem("token");
     const userId = localStorage.getItem("logedUserId") || 0;
@@ -146,41 +143,37 @@ const FAQ = () => {
       userId: parseInt(userId),
     };
 
+    setLoading(true); // Début du chargement
     try {
       console.log("Updating FAQ with data:", faqData);
-      const response = await fetch(
-        `http://195.35.24.128:8081/api/faqs/update`,
-        {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify(faqData),
-        }
-      );
+      const response = await fetch(`http://195.35.24.128:8081/api/faqs/update`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(faqData),
+      });
 
       if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
       const data = await response.json();
-      const updatedFaqs = faqs.map((faq) =>
-        faq.id === currentFaq.id ? data.data : faq
-      );
-      setFaqs(updatedFaqs);
+      await fetchFAQs(); // Rafraîchir la liste
       setIsEditDialogOpen(false);
       setCurrentFaq({ question: "", reponse: "", userId: 0 });
       toast.success(data.message);
-      fetchFAQs();
     } catch (err) {
       console.error("Error updating FAQ:", err.message);
       toast.error("Erreur lors de la mise à jour de la FAQ");
-      fetchFAQs();
+      await fetchFAQs();
+    } finally {
+      setLoading(false); // Fin du chargement
     }
   };
 
-  // Gérer la suppression d'une FAQ
   const handleDeleteFaq = async (id) => {
     const token = localStorage.getItem("token");
 
+    setLoading(true); // Début du chargement
     try {
       const response = await fetch(
         `http://195.35.24.128:8081/api/faqs/delete/${id}`,
@@ -193,18 +186,17 @@ const FAQ = () => {
       );
 
       if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
-      const updatedFaqs = faqs.filter((faq) => faq.id !== id);
-      setFaqs(updatedFaqs);
+      await fetchFAQs(); // Rafraîchir la liste
       toast.success("FAQ supprimée avec succès");
-      fetchFAQs();
     } catch (err) {
       console.error("Error deleting FAQ:", err.message);
       toast.error("Erreur lors de la suppression de la FAQ");
-      fetchFAQs();
+      await fetchFAQs();
+    } finally {
+      setLoading(false); // Fin du chargement
     }
   };
 
-  // Ouvrir le dialogue de modification avec les données de la FAQ sélectionnée
   const openEditDialog = (faq) => {
     setCurrentFaq({
       id: faq.id,
@@ -217,6 +209,16 @@ const FAQ = () => {
 
   return (
     <div className="container mx-auto py-6">
+      <Toaster /> {/* Ajout pour afficher les notifications */}
+      {loading && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white p-4 rounded-lg flex items-center space-x-2">
+            <Loader2 className="h-6 w-6 animate-spin text-gray-600" />
+            <span className="text-gray-600">Traitement en cours...</span>
+          </div>
+        </div>
+      )}
+
       <div className="flex justify-between items-center mb-6">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Gestion des FAQ</h1>
@@ -225,7 +227,7 @@ const FAQ = () => {
 
         <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
           <DialogTrigger asChild>
-            <Button className="flex items-center gap-2">
+            <Button className="flex items-center gap-2" disabled={loading}>
               <PlusCircle size={16} />
               <span>Ajouter une FAQ</span>
             </Button>
@@ -247,6 +249,7 @@ const FAQ = () => {
                   onChange={(e) =>
                     setCurrentFaq({ ...currentFaq, question: e.target.value })
                   }
+                  disabled={loading}
                 />
               </div>
               <div className="grid gap-2">
@@ -259,20 +262,22 @@ const FAQ = () => {
                   onChange={(e) =>
                     setCurrentFaq({ ...currentFaq, reponse: e.target.value })
                   }
+                  disabled={loading}
                 />
               </div>
             </div>
             <DialogFooter>
-              <Button variant="outline" onClick={() => setIsAddDialogOpen(false)}>
+              <Button variant="outline" onClick={() => setIsAddDialogOpen(false)} disabled={loading}>
                 Annuler
               </Button>
-              <Button onClick={handleAddFaq}>Ajouter</Button>
+              <Button onClick={handleAddFaq} disabled={loading}>
+                {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Ajouter"}
+              </Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
       </div>
 
-      {/* Barre de recherche */}
       <div className="flex gap-4 mb-6">
         <div className="relative flex-1">
           <Search
@@ -284,15 +289,15 @@ const FAQ = () => {
             className="pl-10"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
+            disabled={loading}
           />
         </div>
-        <Button variant="outline" className="flex items-center gap-2">
+        <Button variant="outline" className="flex items-center gap-2" disabled={loading}>
           <Filter size={16} />
           <span>Filtrer</span>
         </Button>
       </div>
 
-      {/* Liste des FAQ en style bulles de discussion */}
       <div className="space-y-6">
         {filteredFaqs.length > 0 ? (
           filteredFaqs.map((faq) => (
@@ -305,6 +310,7 @@ const FAQ = () => {
                       size="icon"
                       onClick={() => openEditDialog(faq)}
                       className="h-7 w-7 text-gray-500 hover:text-primary"
+                      disabled={loading}
                     >
                       <Edit size={15} />
                     </Button>
@@ -313,13 +319,13 @@ const FAQ = () => {
                       size="icon"
                       onClick={() => handleDeleteFaq(faq.id)}
                       className="h-7 w-7 text-gray-500 hover:text-red-500"
+                      disabled={loading}
                     >
                       <Trash2 size={15} />
                     </Button>
                   </div>
                 </div>
 
-                {/* Bulle de question */}
                 <div className="flex mb-4">
                   <div className="flex-shrink-0 mr-3">
                     <div className="bg-gray-200 rounded-full p-2">
@@ -332,7 +338,6 @@ const FAQ = () => {
                   </div>
                 </div>
 
-                {/* Bulle de réponse */}
                 <div className="flex justify-end">
                   <div className="bg-green-100 p-3 rounded-lg rounded-tr-none max-w-3xl relative">
                     <div className="absolute top-0 -right-2 w-2 h-2 bg-green-100 transform rotate-45"></div>
@@ -354,7 +359,6 @@ const FAQ = () => {
         )}
       </div>
 
-      {/* Dialog de modification */}
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
         <DialogContent className="sm:max-w-[500px]">
           <DialogHeader>
@@ -371,6 +375,7 @@ const FAQ = () => {
                 onChange={(e) =>
                   setCurrentFaq({ ...currentFaq, question: e.target.value })
                 }
+                disabled={loading}
               />
             </div>
             <div className="grid gap-2">
@@ -383,14 +388,17 @@ const FAQ = () => {
                 onChange={(e) =>
                   setCurrentFaq({ ...currentFaq, reponse: e.target.value })
                 }
+                disabled={loading}
               />
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>
+            <Button variant="outline" onClick={() => setIsEditDialogOpen(false)} disabled={loading}>
               Annuler
             </Button>
-            <Button onClick={handleUpdateFaq}>Enregistrer</Button>
+            <Button onClick={handleUpdateFaq} disabled={loading}>
+              {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Enregistrer"}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

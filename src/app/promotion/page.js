@@ -26,9 +26,9 @@ import {
   AlertDialogCancel,
   AlertDialogContent,
   AlertDialogDescription,
-  AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
+  AlertDialogFooter
 } from "@/components/ui/alert-dialog";
 import {
   Popover,
@@ -46,6 +46,7 @@ import {
   Save,
   AlertTriangle,
   Image as ImageIcon,
+  Loader2,
 } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
@@ -62,12 +63,13 @@ const Promotions = () => {
     reduction: "",
     dateDebut: new Date(),
     dateFin: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
-    status: true,
+    status: true, // Initialisé à true par défaut
     acteurId: 2,
-    image: null, // New field for image file or URL
+    image: null,
   });
   const [startTime, setStartTime] = useState("00:00");
   const [endTime, setEndTime] = useState("23:59");
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     fetchPromotions();
@@ -76,7 +78,7 @@ const Promotions = () => {
   const fetchPromotions = async () => {
     const username = localStorage.getItem("username") || "asaleydiori@gmail.com";
     const token = localStorage.getItem("token");
-
+    setLoading(true);
     try {
       const response = await fetch(
         `http://195.35.24.128:8081/api/promotions/livraison/liste?username=${username}`,
@@ -92,10 +94,12 @@ const Promotions = () => {
       const data = await response.json();
       const validPromos = (data.data || []).filter((promo) => promo && promo.id);
       setPromotions(validPromos);
-      // toast.success(data.message);
+      console.log("Promotions fetched:", validPromos);  
     } catch (err) {
       console.error("Error fetching promotions:", err.message);
       toast.error("Erreur lors de la récupération des promotions");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -107,7 +111,7 @@ const Promotions = () => {
       reduction: "",
       dateDebut: new Date(),
       dateFin: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
-      status: true,
+      status: true, // Par défaut actif pour une nouvelle promo
       acteurId: 2,
       image: null,
     });
@@ -127,9 +131,9 @@ const Promotions = () => {
       reduction: promo.reduction || "",
       dateDebut: debut,
       dateFin: fin,
-      status: promo.promotionStatus ?? true,
+      status: promo.promotionStatus ?? true, // Récupère le statut actuel
       acteurId: 2,
-      image: promo.image || null, // Assuming the API returns an image field
+      image: promo.image || null,
     });
     setStartTime(promo.promotionDateDebut ? format(new Date(promo.promotionDateDebut), "HH:mm") : "00:00");
     setEndTime(promo.promotionDateFin ? format(new Date(promo.promotionDateFin), "HH:mm") : "23:59");
@@ -138,7 +142,7 @@ const Promotions = () => {
 
   const handleDeleteConfirm = async () => {
     const token = localStorage.getItem("token");
-
+    setLoading(true);
     try {
       const response = await fetch(
         `http://195.35.24.128:8081/api/promotions/livraison/delete/${promoToDelete.id}`,
@@ -153,11 +157,13 @@ const Promotions = () => {
       setPromotions(promotions.filter((promo) => promo.id !== promoToDelete.id));
       setPromoToDelete(null);
       toast.success("Promotion supprimée avec succès");
-      fetchPromotions();
+      await fetchPromotions();
     } catch (err) {
       console.error("Error deleting promotion:", err.message);
       toast.error("Erreur lors de la suppression de la promotion");
-      fetchPromotions();
+      await fetchPromotions();
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -166,7 +172,7 @@ const Promotions = () => {
     if (name === "image" && files && files[0]) {
       setFormData({
         ...formData,
-        image: files[0], // Store the file object
+        image: files[0],
       });
     } else {
       setFormData({
@@ -212,39 +218,40 @@ const Promotions = () => {
     formDataToSend.append("intitule", formData.intitule);
     formDataToSend.append("description", formData.description);
     formDataToSend.append("reduction", parseInt(formData.reduction, 10));
-    formDataToSend.append("status", formData.status);
     formDataToSend.append("acteurId", formData.acteurId);
     formDataToSend.append("dateDebut", formData.dateDebut.toISOString());
     formDataToSend.append("dateFin", formData.dateFin.toISOString());
-    if (formData.media) {
-      formDataToSend.append("image", formData.media); // Append the image file
+    if (formData.image) {
+      formDataToSend.append("image", formData.image);
     }
 
+    setLoading(true);
     try {
       const response = await fetch(`http://195.35.24.128:8081/api/promotions/livraison/new`, {
         method: "POST",
         headers: {
           Authorization: `Bearer ${token}`,
         },
-        body: formDataToSend, // Use FormData instead of JSON.stringify
+        body: formDataToSend,
       });
 
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(`HTTP error! Status: ${response.status} - ${errorData.message || "Unknown error"}`);
       }
-      console.log("Response:", response);
       const data = await response.json();
       const newPromo = data.data;
 
       setPromotions([...promotions, newPromo]);
       toast.success(data.message);
       setIsEditing(false);
-      fetchPromotions();
+      await fetchPromotions();
     } catch (err) {
       console.error("Error creating promotion:", err.message);
       toast.error(`Erreur lors de l'ajout de la promotion: ${err.message}`);
-      fetchPromotions();
+      await fetchPromotions();
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -255,14 +262,15 @@ const Promotions = () => {
     formDataToSend.append("intitule", formData.intitule);
     formDataToSend.append("description", formData.description);
     formDataToSend.append("reduction", parseInt(formData.reduction, 10));
-    formDataToSend.append("status", formData.status);
+    formDataToSend.append("status", formData.status); // Inclus uniquement lors de la modification
     formDataToSend.append("acteurId", formData.acteurId);
     formDataToSend.append("dateDebut", formData.dateDebut.toISOString());
     formDataToSend.append("dateFin", formData.dateFin.toISOString());
-    if (formData.media && formData.media instanceof File) {
-      formDataToSend.append("media", formData.media); // Append new image file if changed
+    if (formData.image && formData.image instanceof File) {
+      formDataToSend.append("image", formData.image);
     }
-
+console.log("FormData to send:", Object.fromEntries(formDataToSend.entries()));
+    setLoading(true);
     try {
       const response = await fetch(`http://195.35.24.128:8081/api/promotions/livraison/update`, {
         method: "PUT",
@@ -279,19 +287,16 @@ const Promotions = () => {
 
       const data = await response.json();
       const updatedPromo = data.data;
-      console.log("Updated Promo:", response);
-      if (!response.ok) {
-        throw new Error("La réponse de l'API est invalide ou incomplète");
-      }
 
-      // setPromotions(promotions.map((promo) => (promo.id === updatedPromo.id ? updatedPromo : promo)));
       toast.success("Promotion mise à jour avec succès");
       setIsEditing(false);
-      fetchPromotions();
+      await fetchPromotions();
     } catch (err) {
       console.error("Error updating promotion:", err.message);
       toast.error(`Erreur lors de la mise à jour de la promotion: ${err.message}`);
-      fetchPromotions();
+      await fetchPromotions();
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -316,19 +321,29 @@ const Promotions = () => {
   };
 
   const isActive = (promo) => {
-    if (!promo || !promo.promotionDateDebut || !promo.promotionDateFin) return false;
-    const now = new Date();
-    return new Date(promo.promotionDateDebut) <= now && new Date(promo.promotionDateFin) >= now && promo.promotionStatus;
+    // if (!promo || !promo.promotionDateDebut || !promo.promotionDateFin) return false;
+    // const now = new Date();
+    // return new Date(promo.promotionDateDebut) <= now && new Date(promo.promotionDateFin) >= now && promo.promotionStatus;
+    return promo && promo.promotionStatus;
   };
 
   return (
     <div className="container mx-auto py-6 space-y-6">
+      {loading && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white p-4 rounded-lg flex items-center space-x-2">
+            <Loader2 className="h-6 w-6 animate-spin text-gray-600" />
+            <span className="text-gray-600">Traitement en cours...</span>
+          </div>
+        </div>
+      )}
+
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-2xl font-bold">Gestion des Promotions</h1>
           <p className="text-gray-500 mt-1">Programmez et gérez vos promotions</p>
         </div>
-        <Button onClick={handleAddNewPromo} className="flex items-center gap-2">
+        <Button onClick={handleAddNewPromo} className="flex items-center gap-2" disabled={loading}>
           <Plus size={16} />
           <span>Ajouter une promotion</span>
         </Button>
@@ -387,13 +402,14 @@ const Promotions = () => {
                       </TableCell>
                       <TableCell className="text-right">
                         <div className="flex justify-end space-x-2">
-                          <Button variant="outline" size="icon" onClick={() => handleEditPromo(promo)}>
+                          <Button variant="outline" size="icon" onClick={() => handleEditPromo(promo)} disabled={loading}>
                             <Edit className="h-4 w-4" />
                           </Button>
                           <Button
                             variant="destructive"
                             size="icon"
                             onClick={() => setPromoToDelete(promo)}
+                            disabled={loading}
                           >
                             <Trash className="h-4 w-4" />
                           </Button>
@@ -428,7 +444,7 @@ const Promotions = () => {
                   <Percent size={20} />
                   <span>{formData.id ? "Modifier la promotion" : "Ajouter une nouvelle promotion"}</span>
                 </div>
-                <Button variant="ghost" size="icon" onClick={() => setIsEditing(false)}>
+                <Button variant="ghost" size="icon" onClick={() => setIsEditing(false)} disabled={loading}>
                   <X size={18} />
                 </Button>
               </CardTitle>
@@ -448,6 +464,7 @@ const Promotions = () => {
                       value={formData.intitule}
                       onChange={handleFormChange}
                       required
+                      disabled={loading}
                     />
                   </div>
                   <div className="space-y-2">
@@ -460,6 +477,7 @@ const Promotions = () => {
                       value={formData.reduction}
                       onChange={handleFormChange}
                       required
+                      disabled={loading}
                     />
                   </div>
                   <div className="space-y-2 md:col-span-2">
@@ -472,9 +490,9 @@ const Promotions = () => {
                       onChange={handleFormChange}
                       rows={3}
                       required
+                      disabled={loading}
                     />
                   </div>
-                  {/* New Image Field */}
                   <div className="space-y-2 md:col-span-2">
                     <Label htmlFor="image">Image de la promotion</Label>
                     <Input
@@ -483,19 +501,20 @@ const Promotions = () => {
                       type="file"
                       accept="image/*"
                       onChange={handleFormChange}
+                      disabled={loading}
                     />
-                    {formData.media && typeof formData.media === "string" && (
+                    {formData.image && typeof formData.image === "string" && (
                       <div className="mt-2">
                         <img
-                          src={formData.media}
+                          src={formData.image}
                           alt="Aperçu de l'image"
                           className="h-20 w-20 object-cover rounded"
                         />
                       </div>
                     )}
-                    {formData.media && formData.media instanceof File && (
+                    {formData.image && formData.image instanceof File && (
                       <div className="mt-2 text-sm text-gray-500">
-                        Fichier sélectionné : {formData.media.name}
+                        Fichier sélectionné : {formData.image.name}
                       </div>
                     )}
                   </div>
@@ -510,6 +529,7 @@ const Promotions = () => {
                               "w-full justify-start text-left font-normal",
                               !formData.dateDebut && "text-muted-foreground"
                             )}
+                            disabled={loading}
                           >
                             <CalendarIcon className="mr-2 h-4 w-4" />
                             {formData.dateDebut ? format(formData.dateDebut, "PPP") : <span>Choisir une date</span>}
@@ -522,6 +542,7 @@ const Promotions = () => {
                             onSelect={(date) => handleDateChange("dateDebut", date)}
                             initialFocus
                             className="pointer-events-auto"
+                            disabled={loading}
                           />
                         </PopoverContent>
                       </Popover>
@@ -530,6 +551,7 @@ const Promotions = () => {
                         value={startTime}
                         onChange={(e) => handleTimeChange("startTime", e.target.value)}
                         className="w-24"
+                        disabled={loading}
                       />
                     </div>
                   </div>
@@ -544,6 +566,7 @@ const Promotions = () => {
                               "w-full justify-start text-left font-normal",
                               !formData.dateFin && "text-muted-foreground"
                             )}
+                            disabled={loading}
                           >
                             <CalendarIcon className="mr-2 h-4 w-4" />
                             {formData.dateFin ? format(formData.dateFin, "PPP") : <span>Choisir une date</span>}
@@ -556,6 +579,7 @@ const Promotions = () => {
                             onSelect={(date) => handleDateChange("dateFin", date)}
                             initialFocus
                             className="pointer-events-auto"
+                            disabled={loading}
                           />
                         </PopoverContent>
                       </Popover>
@@ -564,29 +588,35 @@ const Promotions = () => {
                         value={endTime}
                         onChange={(e) => handleTimeChange("endTime", e.target.value)}
                         className="w-24"
+                        disabled={loading}
                       />
                     </div>
                   </div>
-                  <div className="space-y-2 md:col-span-2 flex items-center">
-                    <Button
-                      type="button"
-                      variant={formData.status ? "default" : "outline"}
-                      onClick={handleToggleStatus}
-                      className="mr-4"
-                    >
-                      {formData.status ? "Actif" : "Inactif"}
-                    </Button>
-                    <span className="text-sm text-gray-500">
-                      Définissez si la promotion doit être active pendant la période définie
-                    </span>
-                  </div>
+                  {/* Champ Status visible uniquement en mode édition */}
+                  {formData.id && (
+                    <div className="space-y-2 md:col-span-2 flex items-center">
+                      <Label className="mr-4">Statut</Label>
+                      <Button
+                        type="button"
+                        variant={formData.status ? "default" : "outline"}
+                        onClick={handleToggleStatus}
+                        className="mr-4"
+                        disabled={loading}
+                      >
+                        {formData.status ? "Actif" : "Inactif"}
+                      </Button>
+                      <span className="text-sm text-gray-500">
+                        Définissez si la promotion doit être active ou inactive
+                      </span>
+                    </div>
+                  )}
                 </div>
                 <div className="flex justify-end gap-2 pt-4">
-                  <Button type="button" variant="outline" onClick={() => setIsEditing(false)}>
+                  <Button type="button" variant="outline" onClick={() => setIsEditing(false)} disabled={loading}>
                     Annuler
                   </Button>
-                  <Button type="submit" className="flex items-center gap-2">
-                    <Save size={16} />
+                  <Button type="submit" className="flex items-center gap-2" disabled={loading}>
+                    {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save size={16} />}
                     {formData.id ? "Mettre à jour" : "Ajouter"}
                   </Button>
                 </div>
@@ -609,9 +639,9 @@ const Promotions = () => {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Annuler</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDeleteConfirm}>
-              Supprimer
+            <AlertDialogCancel disabled={loading}>Annuler</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDeleteConfirm} disabled={loading}>
+              {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Supprimer"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

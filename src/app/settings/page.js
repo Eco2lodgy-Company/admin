@@ -1,5 +1,5 @@
 "use client";
-import { Toaster } from "@/components/ui/sonner"
+import { Toaster } from "@/components/ui/sonner";
 import React, { useState, useEffect } from "react";
 import {
   Card,
@@ -18,7 +18,13 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import { User, Lock, Settings as SettingsIcon, X } from "lucide-react";
+import {
+  User,
+  Lock,
+  Settings as SettingsIcon,
+  X,
+  Loader2, // Ajout de Loader2 pour les spinners
+} from "lucide-react";
 
 const Settings = () => {
   const [profileData, setProfileData] = useState({
@@ -41,12 +47,13 @@ const Settings = () => {
   });
 
   const [isEditingProfile, setIsEditingProfile] = useState(false);
+  const [loading, setLoading] = useState(false); // Ajout de l'état loading
 
   // Fetch profile data on component mount
   const fetchProfile = async () => {
     const token = localStorage.getItem("token");
     const username = localStorage.getItem("username");
-
+    setLoading(true); // Début du chargement
     try {
       const response = await fetch(
         `http://195.35.24.128:8081/api/user/findByUsername?email=${username}`,
@@ -75,10 +82,12 @@ const Settings = () => {
         latitude: data.data.latitude || "",
         role: "Administrateur",
       });
-      toast.success(data.message);
+      // toast.success(data.message); // Commenté car non utilisé ici
     } catch (err) {
       console.error("Error fetching profile:", err.message);
       toast.error("Erreur lors de la récupération du profil");
+    } finally {
+      setLoading(false); // Fin du chargement
     }
   };
 
@@ -105,31 +114,33 @@ const Settings = () => {
   const handleProfileSubmit = async (e) => {
     e.preventDefault();
     const token = localStorage.getItem("token");
-    console.log("editing",profileData);
+    console.log("editing", profileData);
+    setLoading(true); // Début du chargement
     try {
-      const response = await fetch(
-        `http://195.35.24.128:8081/api/user/update`, // Ajout de l'ID dans l'URL
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify(profileData),
-        }
-      );
+      const response = await fetch(`http://195.35.24.128:8081/api/user/update`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(profileData),
+      });
 
       if (!response.ok) {
-        throw new Error(`HTTP error! Status: ${response.status}`);
+        const errorData = await response.json();
+        throw new Error(`HTTP error! Status: ${response.status} - ${errorData.message || "Unknown error"}`);
       }
 
-      toast.success("Profil mis à jour avec succès");
+      const data = await response.json(); // Récupérer la réponse
+      toast.success(data.message || "Profil mis à jour avec succès"); // Utilisation de data.message
       setIsEditingProfile(false);
-      fetchProfile();
+      await fetchProfile();
     } catch (err) {
       console.error("Error updating profile:", err.message);
-      toast.error("Erreur lors de la mise à jour du profil");
-      fetchProfile();
+      toast.error(`Erreur lors de la mise à jour du profil: ${err.message}`);
+      await fetchProfile();
+    } finally {
+      setLoading(false); // Fin du chargement
     }
   };
 
@@ -150,41 +161,52 @@ const Settings = () => {
       confirmNewPassword: passwordData.confirmNewPassword,
     };
 
+    setLoading(true); // Début du chargement
     try {
-      const response = await fetch(
-        `http://195.35.24.128:8081/api/user/changePassword`,
-        {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify(passwordPayload),
-        }
-      );
+      const response = await fetch(`http://195.35.24.128:8081/api/user/changePassword`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(passwordPayload),
+      });
 
       if (!response.ok) {
-        throw new Error(`HTTP error! Status: ${response.status}`);
+        const errorData = await response.json();
+        throw new Error(`HTTP error! Status: ${response.status} - ${errorData.message || "Unknown error"}`);
       }
 
-      toast.success("Mot de passe modifié avec succès");
+      const data = await response.json(); // Récupérer la réponse
+      toast.success(data.message || "Mot de passe mis à jour avec succès"); // Utilisation de data.message
       setPasswordData({
         email: "",
         oldPassword: "",
         newPassword: "",
         confirmNewPassword: "",
       });
-      fetchProfile();
+      await fetchProfile();
     } catch (err) {
       console.error("Error changing password:", err.message);
-      toast.error("Erreur lors du changement de mot de passe");
-      fetchProfile();
+      toast.error(`Erreur lors du changement de mot de passe: ${err.message}`);
+      await fetchProfile();
+    } finally {
+      setLoading(false); // Fin du chargement
     }
   };
 
   return (
     <div className="space-y-6">
-       <Toaster />
+      <Toaster />
+      {loading && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white p-4 rounded-lg flex items-center space-x-2">
+            <Loader2 className="h-6 w-6 animate-spin text-gray-600" />
+            <span className="text-gray-600">Traitement en cours...</span>
+          </div>
+        </div>
+      )}
+
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">Paramètres</h1>
       </div>
@@ -234,7 +256,7 @@ const Settings = () => {
                   <Label>Adresse</Label>
                   <p className="text-sm">{profileData.adresse || "-"}</p>
                 </div>
-                <Button onClick={() => setIsEditingProfile(true)} className="mt-4">
+                <Button onClick={() => setIsEditingProfile(true)} className="mt-4" disabled={loading}>
                   Modifier le profil
                 </Button>
               </div>
@@ -259,6 +281,7 @@ const Settings = () => {
                     value={passwordData.oldPassword}
                     onChange={handlePasswordChange}
                     required
+                    disabled={loading}
                   />
                 </div>
                 <div className="space-y-2">
@@ -269,22 +292,22 @@ const Settings = () => {
                     value={passwordData.newPassword}
                     onChange={handlePasswordChange}
                     required
+                    disabled={loading}
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="confirmNewPassword">
-                    Confirmer le mot de passe
-                  </Label>
+                  <Label htmlFor="confirmNewPassword">Confirmer le mot de passe</Label>
                   <Input
                     id="confirmNewPassword"
                     type="password"
                     value={passwordData.confirmNewPassword}
                     onChange={handlePasswordChange}
                     required
+                    disabled={loading}
                   />
                 </div>
-                <Button type="submit" className="mt-4">
-                  Mettre à jour le mot de passe
+                <Button type="submit" className="mt-4" disabled={loading}>
+                  {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Mettre à jour le mot de passe"}
                 </Button>
               </form>
             </CardContent>
@@ -303,6 +326,7 @@ const Settings = () => {
                   variant="ghost"
                   size="icon"
                   onClick={() => setIsEditingProfile(false)}
+                  disabled={loading}
                 >
                   <X className="h-4 w-4" />
                 </Button>
@@ -320,6 +344,7 @@ const Settings = () => {
                       id="prenom"
                       value={profileData.prenom}
                       onChange={handleProfileChange}
+                      disabled={loading}
                     />
                   </div>
                   <div className="space-y-2">
@@ -328,6 +353,7 @@ const Settings = () => {
                       id="nom"
                       value={profileData.nom}
                       onChange={handleProfileChange}
+                      disabled={loading}
                     />
                   </div>
                 </div>
@@ -338,6 +364,7 @@ const Settings = () => {
                     type="email"
                     value={profileData.email}
                     onChange={handleProfileChange}
+                    disabled={loading}
                   />
                 </div>
                 <div className="space-y-2">
@@ -346,6 +373,7 @@ const Settings = () => {
                     id="telephone"
                     value={profileData.telephone}
                     onChange={handleProfileChange}
+                    disabled={loading}
                   />
                 </div>
                 <div className="space-y-2">
@@ -354,6 +382,7 @@ const Settings = () => {
                     id="adresse"
                     value={profileData.adresse}
                     onChange={handleProfileChange}
+                    disabled={loading}
                   />
                 </div>
                 <div className="space-y-2">
@@ -362,6 +391,7 @@ const Settings = () => {
                     id="longitude"
                     value={profileData.longitude}
                     onChange={handleProfileChange}
+                    disabled={loading}
                   />
                 </div>
                 <div className="space-y-2">
@@ -370,6 +400,7 @@ const Settings = () => {
                     id="latitude"
                     value={profileData.latitude}
                     onChange={handleProfileChange}
+                    disabled={loading}
                   />
                 </div>
                 <div className="flex justify-end gap-2 pt-4">
@@ -377,10 +408,13 @@ const Settings = () => {
                     type="button"
                     variant="outline"
                     onClick={() => setIsEditingProfile(false)}
+                    disabled={loading}
                   >
                     Annuler
                   </Button>
-                  <Button type="submit">Mettre à jour</Button>
+                  <Button type="submit" disabled={loading}>
+                    {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Mettre à jour"}
+                  </Button>
                 </div>
               </form>
             </CardContent>
