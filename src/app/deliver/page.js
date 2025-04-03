@@ -150,7 +150,7 @@ export default function DeliveryManagement() {
     setLoading(true); // Début du chargement
     try {
       const response = await fetch(
-        `http://195.35.24.128:8081/api/paniers/admin/liste?username=${username}`,
+        `http://195.35.24.128:8081/api/commandes/administrateur/liste`,
         {
           method: "GET",
           headers: {
@@ -331,10 +331,10 @@ export default function DeliveryManagement() {
           En attente
         </Badge>
       );
-    } else if (isApproved) {
+    } else if (isApproved === "En attente") {
       return (
         <Badge variant="outline" className="bg-green-100 text-green-800 hover:bg-green-100">
-          Approuvé
+          En atttente
         </Badge>
       );
     } else {
@@ -347,7 +347,7 @@ export default function DeliveryManagement() {
   };
 
   const calculateTotalAmount = (produits) => {
-    return produits.reduce((total, produit) => total + produit.quantite * produit.prix, 0);
+    return produits?.reduce((total, produit) => total + produit.quantite * produit.prix, 0);
   };
 
   const formatCurrency = (amount) => {
@@ -381,7 +381,7 @@ export default function DeliveryManagement() {
               <div>
                 <p className="text-sm font-medium text-yellow-800">En attente</p>
                 <h3 className="text-2xl font-bold text-yellow-900 mt-1">
-                  {orders.filter((order) => order.produits.some((p) => p.isApproved === null)).length}
+                  {orders.filter((order) => order.etat === "En attente").length}
                 </h3>
               </div>
               <div className="h-12 w-12 bg-yellow-200 rounded-full flex items-center justify-center text-yellow-700">
@@ -612,9 +612,9 @@ export default function DeliveryManagement() {
             <CardHeader className="pb-2">
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                 <div>
-                  <CardTitle className="text-lg">Paniers en attente</CardTitle>
+                  <CardTitle className="text-lg">Commandes en attente</CardTitle>
                   <CardDescription>
-                    {filteredOrders.length} panier{filteredOrders.length !== 1 ? "s" : ""}
+                    {filteredOrders.length} Commandes{filteredOrders.length !== 1 ? "s" : ""}
                   </CardDescription>
                 </div>
                 <div className="relative">
@@ -636,10 +636,11 @@ export default function DeliveryManagement() {
                   <TableHeader>
                     <TableRow>
                       <TableHead>ID</TableHead>
-                      <TableHead>Client</TableHead>
-                      <TableHead>Statut</TableHead>
-                      <TableHead>Produit(s)</TableHead>
-                      <TableHead>Montant</TableHead>
+                      <TableHead>Intitule</TableHead>
+                      <TableHead>Description</TableHead>
+                      <TableHead>ClientNom</TableHead>
+                      <TableHead>VendeurNom</TableHead>
+                      <TableHead>Etat</TableHead>
                       <TableHead>Date</TableHead>
                       <TableHead className="text-right">Actions</TableHead>
                     </TableRow>
@@ -647,15 +648,16 @@ export default function DeliveryManagement() {
                   <TableBody>
                     {filteredOrders.length > 0 ? (
                       filteredOrders.map((order) => (
-                        <TableRow key={order.id}>
-                          <TableCell className="font-medium">#{order.id}</TableCell>
-                          <TableCell>{order.clientNom} ({order.clientEmail})</TableCell>
-                          <TableCell>{getStatusBadge(order.produits[0].isApproved)}</TableCell>
+                        <TableRow key={order?.id}>
+                          <TableCell className="font-medium">#{order?.id}</TableCell>
+                          <TableCell>{order?.clientNom|| "-"} </TableCell>
+                          <TableCell>{order?.description || "-"}</TableCell>
                           <TableCell className="max-w-[200px] truncate">
-                            {order.produits.map((p) => p.nom).join(", ")}
+                            {order.clientNom || "-"}
                           </TableCell>
-                          <TableCell>{formatCurrency(calculateTotalAmount(order.produits))}</TableCell>
-                          <TableCell>{order.createdAt.split("T")[0]}</TableCell>
+                          <TableCell>{order.vendeurNom || "-"}</TableCell>
+                          <TableCell>{getStatusBadge(order.etat) || "-"}</TableCell>
+                          <TableCell>{order?.createdAt.split("T")[0]}</TableCell>
                           <TableCell className="text-right">
                             <DropdownMenu>
                               <DropdownMenuTrigger asChild>

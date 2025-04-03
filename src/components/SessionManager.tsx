@@ -17,7 +17,7 @@ export default function SessionManager({ children }: SessionManagerProps) {
   const [isChecking, setIsChecking] = useState(true); // État pour la vérification initiale
 
   useEffect(() => {
-    const isLoginPage = pathname === "/" ;
+    const isLoginPage = pathname === "/" || pathname === "/login";
 
     // Si c'est la page de connexion, pas de vérification
     if (isLoginPage) {
