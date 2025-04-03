@@ -1,7 +1,10 @@
 
   // Dashboard.jsx
   "use client";
-  import React, { useState, useEffect } from 'react';
+  import React, { useState, useEffect, } from 'react';
+   
+import { useRouter } from 'next/navigation'
+  import jwt from 'jsonwebtoken'
   import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line } from 'recharts';
   import { 
     Users, 
@@ -13,6 +16,7 @@
     Clock, 
     CheckCircle,
     Loader2,
+ 
   } from 'lucide-react';
   import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
   import { cn } from '@/lib/utils';
@@ -109,6 +113,7 @@ import { toast } from 'sonner';
 
   // Main Dashboard Component
   export default function Dashboard() {
+    
     const [dashboardStatsGlobal, setDashboardStatsGlobal] = useState({});
     const [dashboardStats, setDashboardStats] = useState({});
     const [loading, setLoading] = useState(false);
@@ -116,6 +121,11 @@ import { toast } from 'sonner';
     useEffect(() => {
       const username = localStorage.getItem('username');
       const token = localStorage.getItem('token');
+      const decoded = jwt.decode(token)
+      if (decoded?.exp && Date.now() >= decoded?.exp * 1000) {
+       Router.push('/')
+      toast.error("Session expirée, veuillez vous reconnecter.");
+      }
 
       const fetchStatsGlobal = async () => {
         setLoading(true);

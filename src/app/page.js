@@ -59,7 +59,6 @@ export default function LOGIN() {
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState("");
 
-  // Réinitialisation du message d'erreur lorsque l'utilisateur modifie les entrées
   useEffect(() => {
     if (error) setError("");
   }, [formData.email, formData.password]);
@@ -80,16 +79,11 @@ export default function LOGIN() {
     try {
       const response = await fetch(`http://195.35.24.128:8081/api/authenticate?username=${formData.email}&password=${formData.password}`, {
         method: "POST"
-        // headers: { "Content-Type": "application/json" },
-        // body: JSON.stringify({
-        //   email: formData.email,
-        //   password: formData.password,
-        // }),
       });
-      console.log(formData.email,formData.password)
+      console.log(formData.email, formData.password);
 
       const result = await response.json();
-      console.log(response)
+      console.log(response);
 
       if (!response.ok) {
         throw new Error(result.message || "Échec de la connexion");
@@ -101,18 +95,26 @@ export default function LOGIN() {
         throw new Error("Données utilisateur invalides");
       }
 
-      const { role, email,id } = result.data.userInfo;
-      const Token=result.data.token
+      const { role, email, id } = result.data.userInfo;
+      const token = result.data.token;
+
+      // Stocker dans localStorage
       localStorage.setItem("username", email);
       localStorage.setItem("logedUserId", id);
-      localStorage.setItem("token", Token);
-      console.log("Token",Token)
+      localStorage.setItem("token", token);
+      localStorage.setItem("token", token);
       const expiresAt = Date.now() + 3600 * 1000; // 1h en millisecondes
-      localStorage.setItem("tokenExpiresAt", expiresAt);
-      // Afficher le message de succès avant la redirection
+      localStorage.setItem("role", role);
+
+      // Stocker le token et le rôle dans les cookies pour le middleware
+      document.cookie = `token=${token}; path=/; max-age=3600; SameSite=Strict`;
+      document.cookie = `userRole=${role}; path=/; max-age=3600; SameSite=Strict`;
+
+      console.log("Token:", token);
+      console.log("Role:", role);
+
       setSuccess(true);
-      
-      // Redirection après un court délai
+
       setTimeout(() => {
         switch (role) {
           case "Administrateur":
@@ -262,15 +264,6 @@ export default function LOGIN() {
                     Se souvenir de moi
                   </label>
                 </motion.div>
-                {/* <motion.a
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ delay: 0.3 }}
-                  href="#" 
-                  className="text-sm font-medium text-blue-600 hover:text-blue-500"
-                >
-                  Mot de passe oublié?
-                </motion.a> */}
               </div>
               
               <motion.button
@@ -290,20 +283,6 @@ export default function LOGIN() {
                 {isLoading ? "Connexion en cours..." : "Se connecter"}
               </motion.button>
             </form>
-            
-            <motion.div 
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.4 }}
-              className="mt-8 text-center"
-            >
-              {/* <p className="text-sm text-gray-600">
-                Vous n'avez pas encore de compte?{" "}
-                <a href="/register" className="font-medium text-blue-600 hover:text-blue-500 inline-flex items-center">
-                  Créer un compte <ArrowRight className="ml-1 w-3.5 h-3.5" />
-                </a>
-              </p> */}
-            </motion.div>
           </div>
         )}
       </motion.div>

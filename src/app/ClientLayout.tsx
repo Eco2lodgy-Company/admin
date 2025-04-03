@@ -1,3 +1,4 @@
+// app/ClientLayout.tsx
 "use client";
 
 import React, { useState, useEffect } from "react";
@@ -29,7 +30,11 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
       </div>
 
       {/* Contenu principal */}
-      <div className={`flex-1 ${isMobile ? "w-full" : "ml-20 md:ml-64"} transition-all duration-300 p-6 overflow-y-auto`}>
+      <div
+        className={`flex-1 ${
+          isMobile ? "w-full" : "ml-20 md:ml-64"
+        } transition-all duration-300 p-6 overflow-y-auto`}
+      >
         {children}
       </div>
     </div>

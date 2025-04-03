@@ -1,75 +1,46 @@
-import { NextResponse } from 'next/server';
-import { jwtDecode } from 'jwt-decode'; // Installez cette dépendance : npm install jwt-decode
+// middleware.js
+import { NextResponse } from 'next/server'
+import { parse } from 'cookie'
 
-// Liste des routes publiques (accessibles sans authentification)
-const publicPaths = ['/'];
+export async function middleware(request) {
+  const { pathname } = request.nextUrl
+  const cookies = parse(request.headers.get('cookie') || '')
+  const token = cookies.token
 
-// Routes réservées aux admins uniquement
-const adminPaths = ['/dashboard', '/users', '/settings']; // Ajoutez ici toutes les routes admin
+  // Routes protégées
+  if (pathname.startsWith('/dashboard')) {
+    if (!token) {
+      return NextResponse.redirect(new URL('/', request.url))
+    }
 
-export function middleware(request) {
-  const path = request.nextUrl.pathname;
-
-  // Récupérer le token depuis les cookies
-  const token = request.cookies.get('token')?.value;
-
-  // Vérifier si la route est publique
-  const isPublicPath = publicPaths.includes(path);
-
-  // Si pas de token et que la route n'est pas publique, rediriger vers 
-  if (!token && !isPublicPath) {
-    return NextResponse.redirect(new URL('/', request.url));
-  }
-
-  // Si token présent et tentative d'accès à une page publique, rediriger vers dashboard
-  if (token && isPublicPath) {
-    return NextResponse.redirect(new URL('/dashboard', request.url));
-  }
-
-  // Si token présent, vérifier sa validité et le rôle
-  if (token) {
     try {
-      // Décoder le token JWT pour obtenir les informations (exp, role, etc.)
-      const decodedToken = jwtDecode(token);
-      const isTokenExpired = decodedToken.exp * 1000 < Date.now(); // exp est en secondes
+      // Vérifiez la validité du token avec votre API
+      const response = await fetch('http://195.35.24.128:8081/api/validate-token', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      })
 
-      // Si le token est expiré, rediriger vers 
-      if (isTokenExpired) {
-        const response = NextResponse.redirect(new URL('/', request.url));
-        response.cookies.delete('token'); // Supprimer le cookie invalide
-        return response;
+      if (!response.ok) {
+        throw new Error('Token invalide')
       }
 
-      // Vérifier le rôle pour les routes admin
-      const userRole = decodedToken.role; // Assurez-vous que votre token contient un champ "role"
-      const isAdminRoute = adminPaths.includes(path);
-
-      if (isAdminRoute && userRole !== 'Administrateur') {
-        // Si l'utilisateur n'est pas admin et tente d'accéder à une route admin, rediriger
-        return NextResponse.redirect(new URL('/', request.url));
+      // Vous pouvez aussi vérifier le rôle ici si nécessaire
+      const userData = await response.json()
+      if (pathname.startsWith('/admin') && userData.role !== 'Administrateur') {
+        return NextResponse.redirect(new URL('/unauthorized', request.url))
       }
 
     } catch (error) {
-      // Si le token est invalide ou mal formé, rediriger vers 
-      console.error('Erreur de décodage du token:', error);
-      const response = NextResponse.redirect(new URL('/', request.url));
-      response.cookies.delete('token');
-      return response;
+      // Si le token est invalide, redirigez vers la page de login
+      return NextResponse.redirect(new URL('/', request.url))
     }
   }
 
-  // Si tout est OK, continuer vers la page demandée
-  return NextResponse.next();
-}
+  // Si l'utilisateur est déjà connecté et essaie d'accéder à la page de login
+  if (pathname === '/' && token) {
+    return NextResponse.redirect(new URL('/dashboard', request.url))
+  }
 
-export const config = {
-  matcher: [
-    '/',
-    '/',
-    '/dashboard',
-    '/users',
-    '/settings',
-    '/profile',
-    // Ajoutez toutes les routes que vous voulez protéger
-  ],
-};
+  return NextResponse.next()
+}
