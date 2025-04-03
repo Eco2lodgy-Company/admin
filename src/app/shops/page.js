@@ -78,67 +78,64 @@ export default function ShopManagement() {
     acteurId: 0,
   });
 
-
-
-    const fetchShops = async () => {
-      const username = localStorage.getItem("username");
-      const token = localStorage.getItem("token");
-      try {
-        const response = await fetch(
-          `http://195.35.24.128:8081/api/shop/liste?username=${username}`,
-          {
-            method: "GET",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
-
-        if (!response.ok) {
-          throw new Error(`HTTP error! Status: ${response.status}`);
+  const fetchShops = async () => {
+    const username = localStorage.getItem("username");
+    const token = localStorage.getItem("token");
+    try {
+      const response = await fetch(
+        `http://195.35.24.128:8081/api/shop/liste?username=${username}`,
+        {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
         }
+      );
 
-        const data = await response.json();
-        setShops(data.data);
-        setFilteredShops(data.data);
-      } catch (err) {
-        console.error("Error fetching shops:", err.message);
-        toast.error("Erreur lors de la récupération des boutiques");
+      if (!response.ok) {
+        throw new Error(`HTTP error! Status: ${response.status}`);
       }
-    };
 
-    const fetchUsers = async () => {
-      const username = localStorage.getItem("username");
-      const token = localStorage.getItem("token");
-      try {
-        const response = await fetch(
-          `http://195.35.24.128:8081/api/user/liste?username=${username}`,
-          {
-            method: "GET",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
-        if (!response.ok) {
-          throw new Error(`HTTP error! Status: ${response.status}`);
+      const data = await response.json();
+      setShops(data.data);
+      setFilteredShops(data.data);
+    } catch (err) {
+      console.error("Error fetching shops:", err.message);
+      toast.error("Erreur lors de la récupération des boutiques");
+    }
+  };
+
+  const fetchUsers = async () => {
+    const username = localStorage.getItem("username");
+    const token = localStorage.getItem("token");
+    try {
+      const response = await fetch(
+        `http://195.35.24.128:8081/api/user/liste?username=${username}`,
+        {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
         }
-
-        const data = await response.json();
-        setUsers(data.data);
-        // toast.success("Utilisateurs chargés avec succès");
-      } catch (err) {
-        console.error("Error fetching users:", err.message);
-        toast.error("Erreur lors de la récupération des utilisateurs");
+      );
+      if (!response.ok) {
+        throw new Error(`HTTP error! Status: ${response.status}`);
       }
-    };
+
+      const data = await response.json();
+      setUsers(data.data);
+    } catch (err) {
+      console.error("Error fetching users:", err.message);
+      toast.error("Erreur lors de la récupération des utilisateurs");
+    }
+  };
 
   useEffect(() => {
     fetchShops();
     fetchUsers();
-  }, [setShops]);
+  }, []);
 
   const handleSearch = (e) => {
     const query = e.target.value.toLowerCase();
@@ -183,12 +180,10 @@ export default function ShopManagement() {
     }
     formData.append("vendeurId", newShop.vendeurId);
     formData.append("acteurId", id);
-    console.log("ndnndndnd",Object.fromEntries(formData.entries()));
     try {
       const response = await fetch(`http://195.35.24.128:8081/api/shop/new`, {
         method: "POST",
         headers: {
-          contentType: "multipart/form-data",
           Authorization: `Bearer ${token}`,
         },
         body: formData,
@@ -197,7 +192,6 @@ export default function ShopManagement() {
       if (!response.ok) {
         throw new Error(`HTTP error! Status: ${response.status}`);
       }
-      console.log(response)
       const data = await response.json();
       setShops([...shops, data.data]);
       setFilteredShops([...filteredShops, data.data]);
@@ -239,8 +233,7 @@ export default function ShopManagement() {
     }
     formData.append("vendeurId", currentShop.vendeurId);
     formData.append("acteurId", currentShop.acteurId);
-console.log(formData)
-console.log(currentShop.id)
+
     try {
       const response = await fetch(`http://195.35.24.128:8081/api/shop/update`, {
         method: "PUT",
@@ -279,7 +272,6 @@ console.log(currentShop.id)
     if (!currentShop) return;
 
     const token = localStorage.getItem("token");
-    console.log("shop id",currentShop.id)
     try {
       const response = await fetch(
         `http://195.35.24.128:8081/api/shop/delete/${currentShop.id}`,
@@ -291,7 +283,6 @@ console.log(currentShop.id)
           },
         }
       );
-      console.log(response)
 
       if (!response.ok) {
         throw new Error(`HTTP error! Status: ${response.status}`);
@@ -327,16 +318,16 @@ console.log(currentShop.id)
   };
 
   return (
-    <div className="space-y-6">
+    <div className="p-4 sm:p-6 space-y-6 max-w-full">
       <div className="flex flex-col">
-        <h1 className="text-2xl font-bold">Gestion des boutiques</h1>
+        <h1 className="text-xl sm:text-2xl font-bold">Gestion des boutiques</h1>
       </div>
       <Toaster />
       <Card>
         <CardHeader className="pb-2">
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
-              <CardTitle className="text-lg flex items-center gap-2">
+              <CardTitle className="text-base sm:text-lg flex items-center gap-2">
                 <Store className="h-5 w-5" />
                 Liste des boutiques
               </CardTitle>
@@ -345,13 +336,13 @@ console.log(currentShop.id)
                 {filteredShops?.length !== 1 ? "s" : ""}
               </CardDescription>
             </div>
-            <div className="flex flex-col sm:flex-row gap-2">
-              <div className="relative">
+            <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+              <div className="relative w-full sm:w-[260px]">
                 <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
                 <Input
                   type="search"
                   placeholder="Rechercher une boutique..."
-                  className="pl-8 w-full sm:w-[260px]"
+                  className="pl-8 w-full"
                   value={searchQuery}
                   onChange={handleSearch}
                 />
@@ -363,7 +354,7 @@ console.log(currentShop.id)
                     Ajouter une boutique
                   </Button>
                 </DialogTrigger>
-                <DialogContent className="sm:max-w-[600px] max-h-[80vh] overflow-y-auto">
+                <DialogContent className="w-[90vw] sm:max-w-[600px] max-h-[80vh] overflow-y-auto">
                   <DialogHeader>
                     <DialogTitle>Ajouter une boutique</DialogTitle>
                     <DialogDescription>
@@ -371,7 +362,7 @@ console.log(currentShop.id)
                     </DialogDescription>
                   </DialogHeader>
                   <div className="grid gap-4 py-4">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 gap-4">
                       <div className="space-y-2">
                         <Label htmlFor="nom">Nom</Label>
                         <Input
@@ -436,79 +427,38 @@ console.log(currentShop.id)
                           </SelectContent>
                         </Select>
                       </div>
-                      {/* <div className="space-y-2">
-                        <Label htmlFor="acteurId">ID Acteur</Label>
-                        <Input
-                          id="acteurId"
-                          type="number"
-                          value={newShop.acteurId}
+                      <div className="space-y-2">
+                        <Label htmlFor="description">Description</Label>
+                        <Textarea
+                          id="description"
+                          value={newShop.description}
                           onChange={(e) =>
-                            setNewShop({
-                              ...newShop,
-                              acteurId: parseInt(e.target.value) || 0,
-                            })
+                            setNewShop({ ...newShop, description: e.target.value })
                           }
                         />
-                      </div> */}
-                      {/* <div className="space-y-2">
-                        <Label htmlFor="longitude">Longitude</Label>
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="banner">Bannière</Label>
                         <Input
-                          id="longitude"
-                          type="number"
-                          step="0.0001"
-                          value={newShop.longitude}
-                          onChange={(e) =>
-                            setNewShop({
-                              ...newShop,
-                              longitude: parseFloat(e.target.value) || 0,
-                            })
-                          }
+                          id="banner"
+                          type="file"
+                          accept="image/*"
+                          onChange={(e) => handleImageChange(e)}
                         />
-                      </div> */}
-                      {/* <div className="space-y-2">
-                        <Label htmlFor="latitude">Latitude</Label>
-                        <Input
-                          id="latitude"
-                          type="number"
-                          step="0.0001"
-                          value={newShop.latitude}
-                          onChange={(e) =>
-                            setNewShop({
-                              ...newShop,
-                              latitude: parseFloat(e.target.value) || 0,
-                            })
-                          }
-                        />
-                      </div> */}
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="description">Description</Label>
-                      <Textarea
-                        id="description"
-                        value={newShop.description}
-                        onChange={(e) =>
-                          setNewShop({ ...newShop, description: e.target.value })
-                        }
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="banner">Bannière</Label>
-                      <Input
-                        id="banner"
-                        type="file"
-                        accept="image/*"
-                        onChange={(e) => handleImageChange(e)}
-                      />
+                      </div>
                     </div>
                   </div>
-                  <DialogFooter>
+                  <DialogFooter className="flex flex-col sm:flex-row gap-2">
                     <Button
                       variant="outline"
                       onClick={() => setIsAddShopOpen(false)}
+                      className="w-full sm:w-auto"
                     >
                       Annuler
                     </Button>
-                    <Button onClick={handleAddShop}>Ajouter</Button>
+                    <Button onClick={handleAddShop} className="w-full sm:w-auto">
+                      Ajouter
+                    </Button>
                   </DialogFooter>
                 </DialogContent>
               </Dialog>
@@ -516,17 +466,16 @@ console.log(currentShop.id)
           </div>
         </CardHeader>
         <CardContent>
-          <div className="rounded-md border overflow-hidden">
+          <div className="rounded-md border overflow-x-auto">
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>ID</TableHead>
+                  <TableHead className="hidden sm:table-cell">ID</TableHead>
                   <TableHead>Nom</TableHead>
-                  <TableHead>Description</TableHead>
-                  <TableHead>Téléphone</TableHead>
-                  <TableHead>Adresse</TableHead>
-                  <TableHead>Bannière</TableHead>
-                  <TableHead>Date de création</TableHead>
+                  <TableHead className="hidden md:table-cell">Description</TableHead>
+                  <TableHead className="hidden md:table-cell">Téléphone</TableHead>
+                  <TableHead className="hidden lg:table-cell">Adresse</TableHead>
+                  <TableHead className="hidden lg:table-cell">Date de création</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
@@ -534,29 +483,16 @@ console.log(currentShop.id)
                 {filteredShops && filteredShops.length > 0 ? (
                   filteredShops.map((shop) => (
                     <TableRow key={shop?.id}>
-                      <TableCell>{shop?.id}</TableCell>
+                      <TableCell className="hidden sm:table-cell">{shop?.id}</TableCell>
                       <TableCell>{shop?.nom || "-"}</TableCell>
-                      <TableCell className="max-w-xs truncate">
+                      <TableCell className="hidden md:table-cell max-w-[150px] truncate">
                         {shop?.description}
                       </TableCell>
-                      <TableCell>{shop?.telephone || "-"}</TableCell>
-                      <TableCell className="max-w-xs truncate">
+                      <TableCell className="hidden md:table-cell">{shop?.telephone || "-"}</TableCell>
+                      <TableCell className="hidden lg:table-cell max-w-[200px] truncate">
                         {shop?.adresse || "-"}
                       </TableCell>
-                      <TableCell>
-                        {shop?.banner && (
-                          <img
-                            src={
-                              shop.banner instanceof File
-                                ? URL.createObjectURL("http://195.35.24.128/"+shop.banner)
-                                : shop.banner
-                            }
-                            alt="Bannière"
-                            className="w-16 h-16 object-cover rounded"
-                          />
-                        )}
-                      </TableCell>
-                      <TableCell>{formatDate(shop?.createdAt)}</TableCell>
+                      <TableCell className="hidden lg:table-cell">{formatDate(shop?.createdAt)}</TableCell>
                       <TableCell className="text-right">
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
@@ -593,7 +529,7 @@ console.log(currentShop.id)
                   ))
                 ) : (
                   <TableRow>
-                    <TableCell colSpan={8} className="h-24 text-center">
+                    <TableCell colSpan={7} className="h-24 text-center">
                       Aucune boutique trouvée.
                     </TableCell>
                   </TableRow>
@@ -609,7 +545,7 @@ console.log(currentShop.id)
         open={isEditShopOpen && currentShop !== null}
         onOpenChange={setIsEditShopOpen}
       >
-        <DialogContent className="sm:max-w-[600px] max-h-[80vh] overflow-y-auto">
+        <DialogContent className="w-[90vw] sm:max-w-[600px] max-h-[80vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Modifier la boutique</DialogTitle>
             <DialogDescription>
@@ -618,7 +554,7 @@ console.log(currentShop.id)
           </DialogHeader>
           {currentShop && (
             <div className="grid gap-4 py-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="edit-nom">Nom</Label>
                   <Input
@@ -686,104 +622,66 @@ console.log(currentShop.id)
                     </SelectContent>
                   </Select>
                 </div>
-                {/* <div className="space-y-2">
-                  <Label htmlFor="edit-acteurId">ID Acteur</Label>
-                  <Input
-                    id="edit-acteurId"
-                    type="number"
-                    value={currentShop.acteurId}
+                <div className="space-y-2">
+                  <Label htmlFor="edit-description">Description</Label>
+                  <Textarea
+                    id="edit-description"
+                    value={currentShop.description}
                     onChange={(e) =>
                       setCurrentShop({
                         ...currentShop,
-                        acteurId: parseInt(e.target.value) || 0,
+                        description: e.target.value,
                       })
                     }
                   />
-                </div> */}
-                {/* <div className="space-y-2">
-                  <Label htmlFor="edit-longitude">Longitude</Label>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="edit-banner">Bannière</Label>
                   <Input
-                    id="edit-longitude"
-                    type="number"
-                    step="0.0001"
-                    value={currentShop.longitude}
-                    onChange={(e) =>
-                      setCurrentShop({
-                        ...currentShop,
-                        longitude: parseFloat(e.target.value) || 0,
-                      })
-                    }
+                    id="edit-banner"
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => handleImageChange(e, true)}
                   />
-                </div> */}
-                {/* <div className="space-y-2">
-                  <Label htmlFor="edit-latitude">Latitude</Label>
-                  <Input
-                    id="edit-latitude"
-                    type="number"
-                    step="0.0001"
-                    value={currentShop.latitude}
-                    onChange={(e) =>
-                      setCurrentShop({
-                        ...currentShop,
-                        latitude: parseFloat(e.target.value) || 0,
-                      })
-                    }
-                  />
-                </div> */}
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="edit-description">Description</Label>
-                <Textarea
-                  id="edit-description"
-                  value={currentShop.description}
-                  onChange={(e) =>
-                    setCurrentShop({
-                      ...currentShop,
-                      description: e.target.value,
-                    })
-                  }
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="edit-banner">Bannière</Label>
-                <Input
-                  id="edit-banner"
-                  type="file"
-                  accept="image/*"
-                  onChange={(e) => handleImageChange(e, true)}
-                />
-                {currentShop.banner && (
-                  <img
-                    src={
-                      currentShop.banner instanceof File
-                        ? URL.createObjectURL(currentShop.banner)
-                        : currentShop.banner
-                    }
-                    alt="Bannière"
-                    className="mt-2 w-32 h-32 object-cover rounded"
-                  />
-                )}
+                  {currentShop.banner && (
+                    <img
+                      src={
+                        currentShop.banner instanceof File
+                          ? URL.createObjectURL(currentShop.banner)
+                          : currentShop.banner
+                      }
+                      alt="Bannière"
+                      className="mt-2 w-32 h-32 object-cover rounded"
+                    />
+                  )}
+                </div>
               </div>
             </div>
           )}
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsEditShopOpen(false)}>
+          <DialogFooter className="flex flex-col sm:flex-row gap-2">
+            <Button
+              variant="outline"
+              onClick={() => setIsEditShopOpen(false)}
+              className="w-full sm:w-auto"
+            >
               Annuler
             </Button>
-            <Button onClick={handleEditShop}>Enregistrer</Button>
+            <Button onClick={handleEditShop} className="w-full sm:w-auto">
+              Enregistrer
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
       {/* Delete Shop Dialog */}
       <Dialog open={isDeleteShopOpen} onOpenChange={setIsDeleteShopOpen}>
-        <DialogContent className="sm:max-w-[425px]">
+        <DialogContent className="w-[90vw] sm:max-w-[425px]">
           <DialogHeader>
             <DialogTitle>Supprimer la boutique</DialogTitle>
             <DialogDescription>
-              Êtes-vous sûr de vouloir supprimer cette boutique ?
-              Cette action va supprimer tous les produits reliés à cette boutique
-              Notez que action est irreversible !
+              Êtes-vous sûr de vouloir supprimer cette boutique ? Cette action va
+              supprimer tous les produits reliés à cette boutique. Notez que
+              cette action est irréversible !
             </DialogDescription>
           </DialogHeader>
           {currentShop && (
@@ -792,8 +690,8 @@ console.log(currentShop.id)
                 <div className="h-10 w-10 rounded-full bg-gray-200 flex items-center justify-center">
                   <Store className="h-6 w-6 text-gray-500" />
                 </div>
-                <div>
-                  <p className="font-medium">{currentShop.nom}</p>
+                <div className="flex-1">
+                  <p className="font-medium truncate">{currentShop.nom}</p>
                   {currentShop.telephone && (
                     <div className="flex items-center text-sm text-gray-500">
                       <Phone className="h-3 w-3 mr-1" />
@@ -801,7 +699,7 @@ console.log(currentShop.id)
                     </div>
                   )}
                   {currentShop.adresse && (
-                    <div className="flex items-center text-sm text-gray-500">
+                    <div className="flex items-center text-sm text-gray-500 truncate">
                       <MapPin className="h-3 w-3 mr-1" />
                       {currentShop.adresse}
                     </div>
@@ -810,11 +708,19 @@ console.log(currentShop.id)
               </div>
             </div>
           )}
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsDeleteShopOpen(false)}>
+          <DialogFooter className="flex flex-col sm:flex-row gap-2">
+            <Button
+              variant="outline"
+              onClick={() => setIsDeleteShopOpen(false)}
+              className="w-full sm:w-auto"
+            >
               Annuler
             </Button>
-            <Button variant="destructive" onClick={handleDeleteShop}>
+            <Button
+              variant="destructive"
+              onClick={handleDeleteShop}
+              className="w-full sm:w-auto"
+            >
               Supprimer
             </Button>
           </DialogFooter>

@@ -100,14 +100,14 @@ const SIDEBAR = () => {
       <>
         <button
           onClick={() => setMobileMenuOpen(true)}
-          className="fixed top-4 left-4 z-50 p-2 bg-slate-900 text-white rounded-md shadow-md"
+          className="fixed top-4 left-4 z-50 p-2 bg-green-900 text-white rounded-md shadow-md"
         >
           <Menu size={24} />
         </button>
 
         {mobileMenuOpen && (
           <div className="fixed inset-0 bg-green-600 bg-opacity-50 z-50 flex">
-            <div className="bg-slate-900 text-white w-64 h-full overflow-y-auto">
+            <div className="bg-green-900 text-white w-64 h-full overflow-y-auto">
               <div className="flex items-center p-4 border-b border-slate-700">
                 <div className="bg-green-600 h-10 w-10 rounded-md flex items-center justify-center text-white font-bold text-xl">
                   DR
@@ -115,7 +115,7 @@ const SIDEBAR = () => {
                 <h1 className="ml-3 font-bold text-xl">drive.re</h1>
                 <button
                   onClick={() => setMobileMenuOpen(false)}
-                  className="ml-auto p-2 rounded-md hover:bg-slate-800"
+                  className="ml-auto p-2 rounded-md hover:bg-green-800"
                 >
                   <X size={20} />
                 </button>
@@ -136,7 +136,7 @@ const SIDEBAR = () => {
                             "flex items-center p-3 rounded-md transition-colors",
                             active
                               ? "bg-green-600 text-white"
-                              : "hover:bg-slate-800 text-slate-200"
+                              : "hover:bg-green-800 text-slate-200"
                           )}
                           onClick={() => setMobileMenuOpen(false)}
                         >
@@ -167,7 +167,7 @@ const SIDEBAR = () => {
               <div className="p-4 border-t border-slate-700 mt-auto">
                 <button
                   onClick={handleLogout}
-                  className="flex items-center p-3 w-full rounded-md hover:bg-slate-800 transition-colors"
+                  className="flex items-center p-3 w-full rounded-md hover:bg-green-800 transition-colors"
                 >
                   <LogOut size={20} className="text-slate-300" />
                   <span className="ml-3 text-slate-200">Déconnexion</span>
@@ -184,20 +184,21 @@ const SIDEBAR = () => {
   return (
     <div
       className={cn(
-        "h-screen flex flex-col bg-slate-900 text-white transition-all duration-300 fixed left-0 top-0 bottom-0",
+        "h-screen flex flex-col bg-green-900 text-white transition-all duration-300 fixed left-0 top-0 bottom-0",
         expanded ? "w-64" : "w-20"
       )}
+      style={{backgroundColor: "#556b2f"}}
     >
       <div className="flex items-center p-4 border-b border-slate-700">
-        <div className="bg-green-600 h-10 w-10 rounded-md flex items-center justify-center text-white font-bold text-xl">
+        <div className="bg-green-#556b2f h-10 w-10 rounded-md flex items-center justify-center text-white font-bold text-xl">
           DR
         </div>
         {expanded && <h1 className="ml-3 font-bold text-xl">drive.re</h1>}
         <button
           onClick={() => setExpanded(!expanded)}
-          className="ml-auto p-2 rounded-md hover:bg-slate-800"
+          className="ml-auto p-2 rounded-md hover:bg-green-800"
         >
-          {expanded ? <ChevronLeft size={20} /> : <ChevronRightA size={20} />}
+          {expanded ? <ChevronLeft size={20} /> : <ChevronRight size={20} />}
         </button>
       </div>
 
@@ -211,7 +212,7 @@ const SIDEBAR = () => {
                   href={item.href}
                   className={cn(
                     "flex items-center p-3 rounded-md transition-colors",
-                    active ? "bg-black text-white" : "hover:bg-slate-800"
+                    active ? "bg-green-800 text-white" : "hover:bg-green-800"
                   )}
                 >
                   <item.icon
@@ -250,7 +251,7 @@ const SIDEBAR = () => {
       <div className="p-4 border-t border-slate-700 mt-auto">
         <button
           onClick={handleLogout}
-          className="mt-4 flex items-center bg-red-800 p-3 w-full rounded-md hover:bg-slate-800 transition-colors"
+          className="mt-4 flex items-center bg-red-800 p-3 w-full rounded-md hover:bg-green-800 transition-colors"
         >
           <LogOut size={20} className="text-slate-300" />
           {expanded && <span className="ml-3 text-slate-200">Déconnexion</span>}
