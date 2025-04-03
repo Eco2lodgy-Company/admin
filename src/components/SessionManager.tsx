@@ -14,25 +14,33 @@ interface SessionManagerProps {
 export default function SessionManager({ children }: SessionManagerProps) {
   const router = useRouter();
   const pathname = usePathname();
-  const [isChecking, setIsChecking] = useState(true); // État pour la vérification initiale
+  const [isMounted, setIsMounted] = useState(false); // État pour vérifier le montage côté client
+  const [isAuthorized, setIsAuthorized] = useState(false); // État pour l'autorisation
 
+  // Marquer le composant comme monté côté client
   useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
+  // Vérification de l'authentification une fois monté
+  useEffect(() => {
+    if (!isMounted) return; // Ne rien faire si pas encore monté
+
     const isLoginPage = pathname === "/" || pathname === "/login";
 
-    // Si c'est la page de connexion, pas de vérification
+    // Si c'est la page de connexion, autoriser directement
     if (isLoginPage) {
-      setIsChecking(false);
+      setIsAuthorized(true);
       return;
     }
 
-    // Vérification de l'authentification côté client
+    // Vérification côté client
     const username = localStorage.getItem("username");
     const token = localStorage.getItem("token");
 
     if (!username || !token) {
       router.push("/");
       toast.error("Veuillez vous connecter.");
-      setIsChecking(false);
       return;
     }
 
@@ -40,16 +48,15 @@ export default function SessionManager({ children }: SessionManagerProps) {
     if (decoded?.exp && Date.now() >= decoded.exp * 1000) {
       router.push("/");
       toast.error("Session expirée, veuillez vous reconnecter.");
-      setIsChecking(false);
       return;
     }
 
-    // Si tout est valide, terminer la vérification
-    setIsChecking(false);
-  }, [router, pathname]);
+    // Si tout est valide, autoriser le rendu
+    setIsAuthorized(true);
+  }, [isMounted, pathname, router]);
 
-  // Afficher le loader pendant la vérification initiale
-  if (isChecking) {
+  // Pendant le rendu initial ou si pas encore monté, afficher un loader
+  if (!isMounted || (!isAuthorized && !pathname.match(/^\/(login)?$/))) {
     return (
       <div className="fixed inset-0 flex items-center justify-center bg-gray-100 z-50">
         <div className="text-center">
@@ -66,6 +73,6 @@ export default function SessionManager({ children }: SessionManagerProps) {
     );
   }
 
-  // Une fois la vérification terminée, rendre les enfants (ou rediriger si non autorisé)
+  // Si autorisé ou sur la page de connexion, rendre les enfants
   return <>{children}</>;
 }
