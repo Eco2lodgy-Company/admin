@@ -106,16 +106,16 @@ const SIDEBAR = () => {
         </button>
 
         {mobileMenuOpen && (
-          <div className="fixed inset-0 bg-green-600 bg-opacity-50 z-50 flex">
-            <div className="bg-green-900 text-white w-64 h-full overflow-y-auto">
+          <div className="fixed inset-0 bg-green-800 bg-opacity-50 z-50 flex">
+            <div className="bg-green-800 text-white w-64 h-full overflow-y-auto">
               <div className="flex items-center p-4 border-b border-slate-700">
-                <div className="bg-green-600 h-10 w-10 rounded-md flex items-center justify-center text-white font-bold text-xl">
+                <div className="bg-green-800 h-10 w-10 rounded-md flex items-center justify-center text-white font-bold text-xl">
                   DR
                 </div>
                 <h1 className="ml-3 font-bold text-xl">drive.re</h1>
                 <button
                   onClick={() => setMobileMenuOpen(false)}
-                  className="ml-auto p-2 rounded-md hover:bg-green-800"
+                  className="ml-auto p-2 rounded-md hover:bg-green-900"
                 >
                   <X size={20} />
                 </button>
@@ -135,7 +135,7 @@ const SIDEBAR = () => {
                           className={cn(
                             "flex items-center p-3 rounded-md transition-colors",
                             active
-                              ? "bg-green-600 text-white"
+                              ? "bg-green-800 text-white"
                               : "hover:bg-green-800 text-slate-200"
                           )}
                           onClick={() => setMobileMenuOpen(false)}
@@ -150,8 +150,8 @@ const SIDEBAR = () => {
                               className={cn(
                                 "ml-auto text-xs font-medium px-2 py-1 rounded-full",
                                 active
-                                  ? "bg-white text-green-600"
-                                  : "bg-green-600 text-white"
+                                  ? "bg-white text-green-800"
+                                  : "bg-green-800 text-white"
                               )}
                             >
                               {item.count}
@@ -167,7 +167,7 @@ const SIDEBAR = () => {
               <div className="p-4 border-t border-slate-700 mt-auto">
                 <button
                   onClick={handleLogout}
-                  className="flex items-center p-3 w-full rounded-md hover:bg-green-800 transition-colors"
+                  className="flex items-center p-3 w-full bg-red-600 rounded-md hover:bg-red-800 transition-colors"
                 >
                   <LogOut size={20} className="text-slate-300" />
                   <span className="ml-3 text-slate-200">Déconnexion</span>
@@ -187,7 +187,7 @@ const SIDEBAR = () => {
         "h-screen flex flex-col bg-green-900 text-white transition-all duration-300 fixed left-0 top-0 bottom-0",
         expanded ? "w-64" : "w-20"
       )}
-      style={{backgroundColor: "#556b2f"}}
+      // style={{backgroundColor: "#556b2f"}}
     >
       <div className="flex items-center p-4 border-b border-slate-700">
         <div className="bg-green-#556b2f h-10 w-10 rounded-md flex items-center justify-center text-white font-bold text-xl">
@@ -228,7 +228,7 @@ const SIDEBAR = () => {
                         <span
                           className={cn(
                             "text-xs font-medium px-2 py-1 rounded-full",
-                            active ? "bg-white text-green-600" : "bg-green-600 text-white"
+                            active ? "bg-white text-green-800" : "bg-green-800 text-white"
                           )}
                         >
                           {item.count}
@@ -237,7 +237,7 @@ const SIDEBAR = () => {
                     </div>
                   )}
                   {!expanded && item.count > 0 && (
-                    <span className="absolute top-0 right-0 -mt-1 -mr-1 bg-green-600 text-white text-xs font-medium px-1.5 py-0.5 rounded-full">
+                    <span className="absolute top-0 right-0 -mt-1 -mr-1 bg-green-800 text-white text-xs font-medium px-1.5 py-0.5 rounded-full">
                       {item.count}
                     </span>
                   )}

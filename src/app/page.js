@@ -1,5 +1,5 @@
 "use client";
-
+import { Toaster } from "@/components/ui/sonner";
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { useRouter } from "next/navigation";
@@ -13,6 +13,7 @@ import {
   ArrowRight,
   CheckCircle
 } from "lucide-react";
+import { toast } from "sonner";
 
 const formVariants = {
   hidden: { opacity: 0, y: 20 },
@@ -113,18 +114,26 @@ export default function LOGIN() {
       console.log("Token:", token);
       console.log("Role:", role);
 
-      setSuccess(true);
+      
 
-      setTimeout(() => {
-        switch (role) {
-          case "Administrateur":
-            router.push("/dashboard");
-            break;
-          default:
-            router.push("/");
-            break;
-        }
-      }, 1500);
+      // setTimeout(() => {
+      //   switch (role) {
+      //     case "Administrateur":
+      //       router.push("/dashboard");
+      //       break;
+      //     default:
+      //       router.push("/");
+      //       break;
+      //   }
+      // }, 1500);
+      if(role === "Administrateur") {
+        setSuccess(true);
+        router.push("/dashboard");
+      }
+      else {
+       setError("Vous n'avez pas accès à cette page.");
+        router.push("/");
+      }
       
     } catch (err) {
       console.error("Erreur lors de la requête :", err);
@@ -145,6 +154,7 @@ export default function LOGIN() {
         <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-full shadow-lg mb-4">
           <UserCircle className="text-white w-8 h-8" />
         </div>
+        <Toaster/>
         <h1 className="text-2xl font-bold text-gray-800">Bienvenue</h1>
         <p className="text-gray-500 mt-1">Connectez-vous à votre compte</p>
       </motion.div>
