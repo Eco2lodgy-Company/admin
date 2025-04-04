@@ -184,10 +184,10 @@ const SIDEBAR = () => {
   return (
     <div
       className={cn(
-        "h-screen flex flex-col bg-green-900 text-white transition-all duration-300 fixed left-0 top-0 bottom-0",
+        "h-screen flex flex-col  text-white transition-all duration-300 fixed left-0 top-0 bottom-0",
         expanded ? "w-64" : "w-20"
       )}
-      // style={{backgroundColor: "#556b2f"}}
+      style={{backgroundColor: "#0F7136"}}
     >
       <div className="flex items-center p-4 border-b border-slate-700">
         <div className="bg-green-#556b2f h-10 w-10 rounded-md flex items-center justify-center text-white font-bold text-xl">
