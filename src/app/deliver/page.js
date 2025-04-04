@@ -421,7 +421,7 @@ export default function DeliveryManagement() {
       <Tabs defaultValue="deliverers" className="space-y-4" onValueChange={setActiveTab}>
         <TabsList className="grid w-full grid-cols-2">
           <TabsTrigger value="deliverers">Livreurs</TabsTrigger>
-          <TabsTrigger value="orders">Paniers</TabsTrigger>
+          <TabsTrigger value="orders">Commandes</TabsTrigger>
         </TabsList>
 
         <TabsContent value="deliverers" className="space-y-4">
